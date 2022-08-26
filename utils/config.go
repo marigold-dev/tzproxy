@@ -3,24 +3,29 @@ package util
 import (
 	"time"
 
-	"github.com/labstack/echo/v4/middleware"
-	"golang.org/x/time/rate"
+	"github.com/ulule/limiter/v3"
 )
 
 type Config struct {
 	Host            string
 	TezosHost       string
-	RateLimitConfig *middleware.RateLimiterMemoryStoreConfig
+	RateEnable      bool
+	Rate            *limiter.Rate
+	BlocklistEnable bool
+	Blocklist       []string
+	RateLimit       bool
 }
 
 func NewConfig() *Config {
 	return &Config{
-		Host:      GetEnv("HOST", "localhost:8080"),
-		TezosHost: GetEnv("TEZOS_HOST", "http://127.0.0.1:8732"),
-		RateLimitConfig: &middleware.RateLimiterMemoryStoreConfig{
-			Rate:      rate.Limit(GetEnvFloat("RATE_LIMIT_REQUESTS_PER_SECOND", 5)),
-			Burst:     GetEnvInt("RATE_LIMIT_BURST", 5),
-			ExpiresIn: time.Duration(GetEnvInt("RATE_LIMIT_EXPIRES_IN", 180)) * time.Second,
+		Host:       GetEnv("HOST", "0.0.0.0:8080"),
+		TezosHost:  GetEnv("TEZOS_HOST", "http://127.0.0.1:8732"),
+		RateEnable: GetEnvBool("RATE_LIMIT_ENABLE", true),
+		Rate: &limiter.Rate{
+			Period: time.Duration(GetEnvFloat("RATE_LIMIT_MINUTES", 1.0)) * time.Minute,
+			Limit:  int64(GetEnvInt("RATE_LIMIT_MAX", 300)),
 		},
+		BlocklistEnable: GetEnvBool("BLOCKLIST_ENABLE", true),
+		Blocklist:       GetEnvSlice("BLOCKLIST", []string{}),
 	}
 }
