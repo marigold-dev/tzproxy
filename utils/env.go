@@ -1,8 +1,12 @@
 package util
 
 import (
+	"encoding/json"
 	"os"
 	"strconv"
+	"strings"
+
+	"golang.org/x/exp/constraints"
 )
 
 func GetEnv(key string, defaultValue string) string {
@@ -13,7 +17,16 @@ func GetEnv(key string, defaultValue string) string {
 	return stringValue
 }
 
-func GetEnvFloat(key string, defaultValue float64) float64 {
+func GetEnvBool(key string, defaultValue bool) bool {
+	stringValue := os.Getenv(key)
+	if stringValue == "" {
+		return defaultValue
+	}
+
+	return strings.Contains(strings.ToLower(stringValue), "true")
+}
+
+func GetEnvFloat[T constraints.Float](key string, defaultValue T) T {
 	stringValue := os.Getenv(key)
 	if stringValue == "" {
 		return defaultValue
@@ -22,15 +35,28 @@ func GetEnvFloat(key string, defaultValue float64) float64 {
 	if err != nil {
 		return defaultValue
 	}
-	return value
+	return T(value)
 }
 
-func GetEnvInt(key string, defaultValue int) int {
+func GetEnvInt[T constraints.Integer](key string, defaultValue T) T {
 	stringValue := os.Getenv(key)
 	if stringValue == "" {
 		return defaultValue
 	}
 	value, err := strconv.Atoi(stringValue)
+	if err != nil {
+		return defaultValue
+	}
+	return T(value)
+}
+
+func GetEnvSlice[T comparable](key string, defaultValue []T) []T {
+	stringValue := os.Getenv(key)
+	if stringValue == "" {
+		return defaultValue
+	}
+	value := []T{}
+	err := json.Unmarshal([]byte(stringValue), &value)
 	if err != nil {
 		return defaultValue
 	}
