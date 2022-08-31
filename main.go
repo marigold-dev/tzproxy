@@ -17,7 +17,6 @@ func main() {
 	store := memory.NewStore()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(middleware.CORS())
 	if config.BlocklistEnable {
 		e.Use(middlewares.BlockIP(config))
 	}
