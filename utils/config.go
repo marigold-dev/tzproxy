@@ -28,7 +28,7 @@ func NewConfig() *Config {
 			Period: time.Duration(GetEnvFloat("RATE_LIMIT_MINUTES", 1.0)) * time.Minute,
 			Limit:  int64(GetEnvInt("RATE_LIMIT_MAX", 300)),
 		},
-		BlockAddressEnable: GetEnvBool("BLOCKLIST_ENABLE", true),
+		BlockAddressEnable: GetEnvBool("BLOCK_ADDRESSES_ENABLE", true),
 		BlockAddress:       GetEnvSlice("BLOCK_ADDRESSES", []string{}),
 		BlockRoutesEnable:  GetEnvBool("BLOCK_ROUTES_ENABLE", true),
 		BlockRoutes: GetEnvSlice("BLOCK_ROUTES", []string{
