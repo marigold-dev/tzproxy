@@ -1,22 +1,28 @@
 package util
 
 import (
+	"os"
 	"regexp"
 	"time"
 
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/rs/zerolog"
 	"github.com/ulule/limiter/v3"
 )
 
 type Config struct {
-	Host               string
-	TezosHost          string
-	Rate               *limiter.Rate
-	RateEnable         bool
-	BlockAddressEnable bool
-	BlockRoutesEnable  bool
-	BlockAddress       []string
-	BlockRoutes        []string
-	BlockRoutesRegex   []*regexp.Regexp
+	Host                string
+	TezosHost           string
+	Rate                *limiter.Rate
+	RateEnable          bool
+	BlockAddressEnable  bool
+	BlockRoutesEnable   bool
+	BlockAddress        []string
+	BlockRoutes         []string
+	BlockRoutesRegex    []*regexp.Regexp
+	Logger              zerolog.Logger
+	RequestLoggerConfig middleware.RequestLoggerConfig
 }
 
 func NewConfig() *Config {
@@ -45,6 +51,36 @@ func NewConfig() *Config {
 			panic(err)
 		}
 		configs.BlockRoutesRegex = append(configs.BlockRoutesRegex, regex)
+	}
+
+	configs.Logger = zerolog.New(os.Stdout)
+	configs.RequestLoggerConfig = middleware.RequestLoggerConfig{
+		LogLatency:      true,
+		LogProtocol:     true,
+		LogRemoteIP:     true,
+		LogMethod:       true,
+		LogURI:          true,
+		LogRoutePath:    true,
+		LogUserAgent:    true,
+		LogStatus:       true,
+		LogError:        true,
+		LogResponseSize: true,
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			configs.Logger.Info().
+				Str("ip", v.RemoteIP).
+				Str("protocol", v.Protocol).
+				Int("status", v.Status).
+				Str("method", v.Method).
+				Str("uri", v.URI).
+				Str("route", v.RoutePath).
+				Err(v.Error).
+				Str("elapsed", v.Latency.String()).
+				Str("user_agent", v.UserAgent).
+				Int64("response_size", v.ResponseSize).
+				Msg("request")
+
+			return nil
+		},
 	}
 
 	return configs

@@ -23,4 +23,6 @@ require (
 	golang.org/x/text v0.5.0 // indirect
 )
 
+require github.com/rs/zerolog v1.28.0
+
 require github.com/stretchr/testify v1.8.0 // indirect

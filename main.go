@@ -1,21 +1,26 @@
 package main
 
 import (
+	"fmt"
+	"net/url"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	middlewares "github.com/marigold-dev/tzproxy/middlawares"
 	utils "github.com/marigold-dev/tzproxy/utils"
+	"github.com/rs/zerolog"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
-	"net/url"
 )
 
 func main() {
 	config := utils.NewConfig()
 	store := memory.NewStore()
 
+  fmt.Println(zerolog.GlobalLevel())
+
 	e := echo.New()
 
-	e.Use(middleware.Logger())
+	e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
 	e.Use(middleware.Recover())
 	e.Use(middlewares.BlockIP(config))
 	e.Use(middlewares.RateLimit(store, config))
