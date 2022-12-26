@@ -11,7 +11,10 @@ import (
 func BlockIP(config *utils.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			if slices.Contains(config.Blocklist, c.RealIP()) {
+			if !config.BlockAddressEnable {
+				return next(c)
+			}
+			if slices.Contains(config.BlockAddress, c.RealIP()) {
 				return c.JSON(http.StatusForbidden, echo.Map{
 					"success": false,
 					"message": "Your IP is blocked, please contact the infra@marigold.dev",

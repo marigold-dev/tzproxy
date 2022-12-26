@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
+	utils "github.com/marigold-dev/tzproxy/utils"
 	"github.com/ulule/limiter/v3"
 )
 
@@ -13,11 +14,14 @@ var (
 	store limiter.Store
 )
 
-func RateLimit(store limiter.Store, rate limiter.Rate) echo.MiddlewareFunc {
-	ipRateLimiter := limiter.New(store, rate)
+func RateLimit(store limiter.Store, config *utils.Config) echo.MiddlewareFunc {
+	ipRateLimiter := limiter.New(store, *config.Rate)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
+			if !config.RateEnable {
+				return next(c)
+			}
 			ip := c.RealIP()
 			limiterCtx, err := ipRateLimiter.Get(c.Request().Context(), ip)
 			if err != nil {
