@@ -16,8 +16,6 @@ func main() {
 	config := utils.NewConfig()
 	store := memory.NewStore()
 
-  fmt.Println(zerolog.GlobalLevel())
-
 	e := echo.New()
 
 	e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
