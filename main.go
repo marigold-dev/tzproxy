@@ -1,14 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"net/url"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	middlewares "github.com/marigold-dev/tzproxy/middlewares"
 	utils "github.com/marigold-dev/tzproxy/utils"
-	"github.com/rs/zerolog"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
 
