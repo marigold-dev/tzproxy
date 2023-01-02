@@ -17,7 +17,7 @@ func BlockIP(config *utils.Config) echo.MiddlewareFunc {
 			if slices.Contains(config.BlockAddress, c.RealIP()) {
 				return c.JSON(http.StatusForbidden, echo.Map{
 					"success": false,
-					"message": "Your IP is blocked, please contact the infra@marigold.dev",
+					"message": "Your IP is blocked",
 				})
 			}
 			return next(c)

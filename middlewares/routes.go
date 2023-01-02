@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -16,9 +17,10 @@ func BlockRoutes(config *utils.Config) echo.MiddlewareFunc {
 
 			for _, regex := range config.BlockRoutesRegex {
 				if regex.MatchString(c.Request().URL.Path) {
+					msg := fmt.Sprintf("You don't have accest %s route", c.Request().URL.Path)
 					return c.JSON(http.StatusForbidden, echo.Map{
 						"success": false,
-						"message": "This route is blocked, please contact the infra@marigold.dev",
+						"message": msg,
 					})
 				}
 			}
