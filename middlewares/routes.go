@@ -15,9 +15,11 @@ func BlockRoutes(config *utils.Config) echo.MiddlewareFunc {
 				return next(c)
 			}
 
+			path := c.Request().URL.Path
+
 			for _, regex := range config.BlockRoutesRegex {
-				if regex.MatchString(c.Request().URL.Path) {
-					msg := fmt.Sprintf("You don't have accest %s route", c.Request().URL.Path)
+				if regex.MatchString(path) {
+					msg := fmt.Sprintf("You don't have accest %s route", path)
 					return c.JSON(http.StatusForbidden, echo.Map{
 						"success": false,
 						"message": msg,

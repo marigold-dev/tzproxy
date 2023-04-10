@@ -1,6 +1,7 @@
 package util
 
 import (
+	"log"
 	"os"
 	"regexp"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/diode"
 	"github.com/ulule/limiter/v3"
 )
 
@@ -53,7 +55,10 @@ func NewConfig() *Config {
 		configs.BlockRoutesRegex = append(configs.BlockRoutesRegex, regex)
 	}
 
-	configs.Logger = zerolog.New(os.Stdout)
+	wr := diode.NewWriter(os.Stdout, 1000, 10*time.Millisecond, func(missed int) {
+		log.Printf("Logger Dropped %d messages", missed)
+	})
+	configs.Logger = zerolog.New(wr)
 	configs.RequestLoggerConfig = middleware.RequestLoggerConfig{
 		LogLatency:      true,
 		LogProtocol:     true,
