@@ -27,8 +27,8 @@ func main() {
 	targets := []*middleware.ProxyTarget{{URL: url}}
 	balance := middleware.NewRoundRobinBalancer(targets)
 
-	e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
 	e.Use(middleware.Recover())
+	// e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
 	e.Use(middlewares.BlockIP(config))
 	e.Use(middlewares.RateLimit(store, config))
 	e.Use(middlewares.BlockRoutes(config))
