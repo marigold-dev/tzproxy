@@ -62,3 +62,20 @@ func GetEnvSlice[T comparable](key string, defaultValue []T) []T {
 	}
 	return value
 }
+
+func GetEnvSet[T comparable](key string, defaultValue map[T]bool) map[T]bool {
+	stringValue := os.Getenv(key)
+	if stringValue == "" {
+		return defaultValue
+	}
+	value := []T{}
+	err := json.Unmarshal([]byte(stringValue), &value)
+	if err != nil {
+		return defaultValue
+	}
+	set := map[T]bool{}
+	for _, v := range value {
+		set[v] = true
+	}
+	return set
+}

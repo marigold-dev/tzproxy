@@ -5,7 +5,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	utils "github.com/marigold-dev/tzproxy/utils"
-	"golang.org/x/exp/slices"
 )
 
 func BlockIP(config *utils.Config) echo.MiddlewareFunc {
@@ -14,7 +13,9 @@ func BlockIP(config *utils.Config) echo.MiddlewareFunc {
 			if !config.BlockAddressEnable {
 				return next(c)
 			}
-			if slices.Contains(config.BlockAddress, c.RealIP()) {
+
+			value, has := config.BlockAddress[c.RealIP()]
+			if value && has {
 				return c.JSON(http.StatusForbidden, echo.Map{
 					"success": false,
 					"message": "Your IP is blocked",

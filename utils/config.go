@@ -20,7 +20,7 @@ type Config struct {
 	RateEnable          bool
 	BlockAddressEnable  bool
 	BlockRoutesEnable   bool
-	BlockAddress        []string
+	BlockAddress        map[string]bool
 	BlockRoutes         []string
 	BlockRoutesRegex    []*regexp.Regexp
 	Logger              zerolog.Logger
@@ -28,6 +28,14 @@ type Config struct {
 }
 
 func NewConfig() *Config {
+	blockAddress := GetEnvSet("BLOCK_ADDRESSES", map[string]bool{})
+	blockRoutes := GetEnvSlice("BLOCK_ROUTES", []string{
+		"/injection/block", "/injection/protocol", "/network.*", "/workers.*",
+		"/worker.*", "/stats.*", "/config", "/chains/main/blocks/.*/helpers/baking_rights",
+		"/chains/main/blocks/.*/helpers/endorsing_rights",
+		"/helpers/baking_rights", "/helpers/endorsing_rights",
+	})
+
 	configs := &Config{
 		Host:       GetEnv("HOST", "0.0.0.0:8080"),
 		TezosHost:  GetEnv("TEZOS_HOST", "http://127.0.0.1:8732"),
@@ -36,15 +44,10 @@ func NewConfig() *Config {
 			Period: time.Duration(GetEnvFloat("RATE_LIMIT_MINUTES", 1.0)) * time.Minute,
 			Limit:  int64(GetEnvInt("RATE_LIMIT_MAX", 300)),
 		},
-		BlockAddressEnable: GetEnvBool("BLOCK_ADDRESSES_ENABLE", true),
-		BlockAddress:       GetEnvSlice("BLOCK_ADDRESSES", []string{}),
-		BlockRoutesEnable:  GetEnvBool("BLOCK_ROUTES_ENABLE", true),
-		BlockRoutes: GetEnvSlice("BLOCK_ROUTES", []string{
-			"/injection/block", "/injection/protocol", "/network.*", "/workers.*",
-			"/worker.*", "/stats.*", "/config", "/chains/main/blocks/.*/helpers/baking_rights",
-			"/chains/main/blocks/.*/helpers/endorsing_rights",
-			"/helpers/baking_rights", "/helpers/endorsing_rights",
-		}),
+		BlockAddress:       blockAddress,
+		BlockAddressEnable: GetEnvBool("BLOCK_ADDRESSES_ENABLE", len(blockAddress) > 0),
+		BlockRoutesEnable:  GetEnvBool("BLOCK_ROUTES_ENABLE", len(blockRoutes) > 0),
+		BlockRoutes:        blockRoutes,
 	}
 
 	for _, route := range configs.BlockRoutes {
