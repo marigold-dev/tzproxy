@@ -17,10 +17,19 @@ require (
 	github.com/ulule/limiter/v3 v3.11.1 // direct
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
+	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 )
 
-require github.com/rs/zerolog v1.29.0
+require (
+	github.com/coocood/freecache v1.2.3
+	github.com/gitsight/go-echo-cache v1.0.1
+	github.com/rs/zerolog v1.29.0
+)
+
+require (
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/mcuadros/go-defaults v1.2.0 // indirect
+)

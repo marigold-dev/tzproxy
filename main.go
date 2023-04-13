@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,14 +26,33 @@ func main() {
 		e.Logger.Fatal(err)
 	}
 	targets := []*middleware.ProxyTarget{{URL: url}}
-	balance := middleware.NewRoundRobinBalancer(targets)
+	balancer := middleware.NewRoundRobinBalancer(targets)
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   65 * time.Second,
+			KeepAlive: 65 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+	proxyConfig := middleware.ProxyConfig{
+		Skipper:    middleware.DefaultSkipper,
+		ContextKey: "target",
+		Balancer:   balancer,
+		Transport:  transport,
+	}
 
 	e.Use(middleware.Recover())
-	// e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
-	e.Use(middlewares.BlockIP(config))
+	e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
+	e.Use(middleware.Gzip())
 	e.Use(middlewares.RateLimit(store, config))
 	e.Use(middlewares.BlockRoutes(config))
-	e.Use(middleware.Proxy(balance))
+	e.Use(middlewares.Cache(config))
+	e.Use(middleware.ProxyWithConfig(proxyConfig))
 
 	// Start server
 	go func() {
