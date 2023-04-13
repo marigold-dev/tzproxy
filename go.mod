@@ -25,7 +25,7 @@ require (
 
 require (
 	github.com/coocood/freecache v1.2.3
-	github.com/gitsight/go-echo-cache v1.0.1
+	github.com/fraidev/go-echo-cache v0.0.0-20230413212051-8322ac919554
 	github.com/rs/zerolog v1.29.0
 )
 

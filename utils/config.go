@@ -41,9 +41,9 @@ func NewConfig() *Config {
 		"/worker.*", "/stats.*", "/config", "/chains/main/blocks/.*/helpers/baking_rights",
 		"/chains/main/blocks/.*/helpers/endorsing_rights",
 		"/helpers/baking_rights", "/helpers/endorsing_rights",
-		"(.*?)context/contracts$",
+		"(.*?)context/contracts",
 	})
-	cacheRoutes := GetEnvSlice("CACHE_ROUTES", []string{
+	dontCacheRoutes := GetEnvSlice("CACHE_ROUTES", []string{
 		"/chains/main/blocks/.*/context/contracts",
 		"/monitor/.*",
 	})
@@ -61,7 +61,7 @@ func NewConfig() *Config {
 		BlockRoutesEnable:  GetEnvBool("BLOCK_ROUTES_ENABLE", len(blockRoutes) > 0),
 		BlockRoutes:        blockRoutes,
 		CacheEnable:        GetEnvBool("CACHE_ENABLE", true),
-		DontCacheRoutes:    cacheRoutes,
+		DontCacheRoutes:    dontCacheRoutes,
 		Cache:              freecache.NewCache(1024 * 1024 * 10),
 		CacheTTL:           time.Duration(GetEnvInt("CACHE_TTL", 5)) * (time.Second),
 	}

@@ -3,7 +3,7 @@ package middlewares
 import (
 	"net/http"
 
-	cache "github.com/gitsight/go-echo-cache"
+	cache "github.com/fraidev/go-echo-cache"
 	"github.com/labstack/echo/v4"
 	utils "github.com/marigold-dev/tzproxy/utils"
 )
@@ -12,6 +12,10 @@ func Cache(config *utils.Config) echo.MiddlewareFunc {
 	return cache.New(&cache.Config{
 		TTL: config.CacheTTL,
 		Cache: func(r *http.Request) bool {
+			if !config.CacheEnable {
+				return false
+			}
+
 			path := r.URL.Path
 			for _, regex := range config.DontCacheRoutesRegex {
 				if regex.MatchString(path) {
