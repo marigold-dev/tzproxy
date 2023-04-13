@@ -41,10 +41,9 @@ func NewConfig() *Config {
 		"/worker.*", "/stats.*", "/config", "/chains/main/blocks/.*/helpers/baking_rights",
 		"/chains/main/blocks/.*/helpers/endorsing_rights",
 		"/helpers/baking_rights", "/helpers/endorsing_rights",
-		"(.*?)context/contracts",
+		"/chains/main/blocks/.*/context/contracts(/?)$",
 	})
 	dontCacheRoutes := GetEnvSlice("CACHE_ROUTES", []string{
-		"/chains/main/blocks/.*/context/contracts",
 		"/monitor/.*",
 	})
 
