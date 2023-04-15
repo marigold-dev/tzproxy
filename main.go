@@ -48,10 +48,10 @@ func main() {
 
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
-	e.Use(middleware.Gzip())
 	e.Use(middlewares.RateLimit(store, config))
 	e.Use(middlewares.BlockRoutes(config))
 	e.Use(middlewares.Cache(config))
+	e.Use(middleware.Gzip())
 	e.Use(middleware.ProxyWithConfig(proxyConfig))
 
 	// Start server
