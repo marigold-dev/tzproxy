@@ -12,13 +12,12 @@ func Cache(config *utils.Config) echo.MiddlewareFunc {
 	return cache.New(&cache.Config{
 		TTL: config.CacheTTL,
 		Cache: func(r *http.Request) bool {
-			if !config.CacheEnable {
+			if !config.CacheEnable || r.Method != http.MethodGet {
 				return false
 			}
 
-			path := r.URL.Path
 			for _, regex := range config.DontCacheRoutesRegex {
-				if regex.MatchString(path) {
+				if regex.MatchString(r.URL.Path) {
 					return false
 				}
 			}

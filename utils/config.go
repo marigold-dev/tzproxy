@@ -21,6 +21,7 @@ type Config struct {
 	RateEnable           bool
 	BlockAddressEnable   bool
 	BlockRoutesEnable    bool
+	CORSEnable           bool
 	CacheEnable          bool
 	DontCacheRoutes      []string
 	DontCacheRoutesRegex []*regexp.Regexp
@@ -55,6 +56,7 @@ func NewConfig() *Config {
 			Period: time.Duration(GetEnvFloat("RATE_LIMIT_MINUTES", 1.0)) * time.Minute,
 			Limit:  int64(GetEnvInt("RATE_LIMIT_MAX", 300)),
 		},
+		CORSEnable:         GetEnvBool("CORS_ENABLE", false),
 		BlockAddress:       blockAddress,
 		BlockAddressEnable: GetEnvBool("BLOCK_ADDRESSES_ENABLE", len(blockAddress) > 0),
 		BlockRoutesEnable:  GetEnvBool("BLOCK_ROUTES_ENABLE", len(blockRoutes) > 0),

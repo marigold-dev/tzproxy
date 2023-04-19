@@ -48,14 +48,10 @@ func main() {
 
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
+	e.Use(middlewares.CORS(config))
 	e.Use(middlewares.RateLimit(store, config))
 	e.Use(middlewares.BlockRoutes(config))
 	e.Use(middlewares.Cache(config))
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		Skipper:      middleware.DefaultSkipper,
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete},
-	}))
 	e.Use(middleware.Gzip())
 	e.Use(middleware.ProxyWithConfig(proxyConfig))
 
