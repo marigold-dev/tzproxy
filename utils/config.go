@@ -18,11 +18,11 @@ type Config struct {
 	Host                 string
 	TezosHost            string
 	Rate                 *limiter.Rate
-	RateEnable           bool
-	BlockAddressEnable   bool
-	BlockRoutesEnable    bool
-	CORSEnable           bool
-	CacheEnable          bool
+	RateEnabled          bool
+	BlockAddressEnabled  bool
+	BlockRoutesEnabled   bool
+	CORSEnabled          bool
+	CacheEnabled         bool
 	DontCacheRoutes      []string
 	DontCacheRoutesRegex []*regexp.Regexp
 	BlockAddress         map[string]bool
@@ -49,22 +49,22 @@ func NewConfig() *Config {
 	})
 
 	configs := &Config{
-		Host:       GetEnv("HOST", "0.0.0.0:8080"),
-		TezosHost:  GetEnv("TEZOS_HOST", "http://127.0.0.1:8732"),
-		RateEnable: GetEnvBool("RATE_LIMIT_ENABLE", true),
+		Host:        GetEnv("HOST", "0.0.0.0:8080"),
+		TezosHost:   GetEnv("TEZOS_HOST", "http://127.0.0.1:8732"),
+		RateEnabled: GetEnvBool("RATE_LIMIT_ENABLED", true),
 		Rate: &limiter.Rate{
 			Period: time.Duration(GetEnvFloat("RATE_LIMIT_MINUTES", 1.0)) * time.Minute,
 			Limit:  int64(GetEnvInt("RATE_LIMIT_MAX", 300)),
 		},
-		CORSEnable:         GetEnvBool("CORS_ENABLE", false),
-		BlockAddress:       blockAddress,
-		BlockAddressEnable: GetEnvBool("BLOCK_ADDRESSES_ENABLE", len(blockAddress) > 0),
-		BlockRoutesEnable:  GetEnvBool("BLOCK_ROUTES_ENABLE", len(blockRoutes) > 0),
-		BlockRoutes:        blockRoutes,
-		CacheEnable:        GetEnvBool("CACHE_ENABLE", true),
-		DontCacheRoutes:    dontCacheRoutes,
-		Cache:              freecache.NewCache(1024 * 1024 * 10),
-		CacheTTL:           time.Duration(GetEnvInt("CACHE_TTL", 5)) * (time.Second),
+		CORSEnabled:         GetEnvBool("CORS_ENABLED", false),
+		BlockAddress:        blockAddress,
+		BlockAddressEnabled: GetEnvBool("BLOCK_ADDRESSES_ENABLED", len(blockAddress) > 0),
+		BlockRoutesEnabled:  GetEnvBool("BLOCK_ROUTES_ENABLED", len(blockRoutes) > 0),
+		BlockRoutes:         blockRoutes,
+		CacheEnabled:        GetEnvBool("CACHE_ENABLED", true),
+		DontCacheRoutes:     dontCacheRoutes,
+		Cache:               freecache.NewCache(1024 * 1024 * 10),
+		CacheTTL:            time.Duration(GetEnvInt("CACHE_TTL", 5)) * (time.Second),
 	}
 
 	for _, route := range configs.BlockRoutes {
