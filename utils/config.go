@@ -35,36 +35,35 @@ type Config struct {
 }
 
 func NewConfig() *Config {
-
-	blockAddress := GetEnvSet("BLOCK_ADDRESSES", map[string]bool{})
-	blockRoutes := GetEnvSlice("BLOCK_ROUTES", []string{
+	blockAddress := GetEnvSet("TZPROXY_BLOCK_ADDRESSES", map[string]bool{})
+	blockRoutes := GetEnvSlice("TZPROXY_BLOCK_ROUTES", []string{
 		"/injection/block", "/injection/protocol", "/network.*", "/workers.*",
 		"/worker.*", "/stats.*", "/config", "/chains/main/blocks/.*/helpers/baking_rights",
 		"/chains/main/blocks/.*/helpers/endorsing_rights",
 		"/helpers/baking_rights", "/helpers/endorsing_rights",
 		"/chains/main/blocks/.*/context/contracts(/?)$",
 	})
-	dontCacheRoutes := GetEnvSlice("CACHE_ROUTES", []string{
+	dontCacheRoutes := GetEnvSlice("TZPROXY_CACHE_ROUTES", []string{
 		"/monitor/.*",
 	})
 
 	configs := &Config{
-		Host:        GetEnv("HOST", "0.0.0.0:8080"),
-		TezosHost:   GetEnv("TEZOS_HOST", "http://127.0.0.1:8732"),
-		RateEnabled: GetEnvBool("RATE_LIMIT_ENABLED", true),
+		Host:        GetEnv("TZPROXY_HOST", "0.0.0.0:8080"),
+		TezosHost:   GetEnv("TZPROXY_TEZOS_HOST", "http://127.0.0.1:8732"),
+		RateEnabled: GetEnvBool("TZPROXY_RATE_LIMIT_ENABLED", true),
 		Rate: &limiter.Rate{
-			Period: time.Duration(GetEnvFloat("RATE_LIMIT_MINUTES", 1.0)) * time.Minute,
-			Limit:  int64(GetEnvInt("RATE_LIMIT_MAX", 300)),
+			Period: time.Duration(GetEnvFloat("TZPROXY_RATE_LIMIT_MINUTES", 1.0)) * time.Minute,
+			Limit:  int64(GetEnvInt("TZPROXY_RATE_LIMIT_MAX", 300)),
 		},
-		CORSEnabled:         GetEnvBool("CORS_ENABLED", false),
+		CORSEnabled:         GetEnvBool("TZPROXY_CORS_ENABLED", false),
 		BlockAddress:        blockAddress,
-		BlockAddressEnabled: GetEnvBool("BLOCK_ADDRESSES_ENABLED", len(blockAddress) > 0),
-		BlockRoutesEnabled:  GetEnvBool("BLOCK_ROUTES_ENABLED", len(blockRoutes) > 0),
+		BlockAddressEnabled: GetEnvBool("TZPROXY_BLOCK_ADDRESSES_ENABLED", len(blockAddress) > 0),
+		BlockRoutesEnabled:  GetEnvBool("TZPROXY_BLOCK_ROUTES_ENABLED", len(blockRoutes) > 0),
 		BlockRoutes:         blockRoutes,
-		CacheEnabled:        GetEnvBool("CACHE_ENABLED", true),
+		CacheEnabled:        GetEnvBool("TZPROXY_CACHE_ENABLED", true),
 		DontCacheRoutes:     dontCacheRoutes,
 		Cache:               freecache.NewCache(1024 * 1024 * 10),
-		CacheTTL:            time.Duration(GetEnvInt("CACHE_TTL", 5)) * (time.Second),
+		CacheTTL:            time.Duration(GetEnvInt("TZPROXY_CACHE_TTL", 5)) * (time.Second),
 	}
 
 	for _, route := range configs.BlockRoutes {
