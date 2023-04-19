@@ -12,7 +12,7 @@ func Cache(config *utils.Config) echo.MiddlewareFunc {
 	return cache.New(&cache.Config{
 		TTL: config.CacheTTL,
 		Cache: func(r *http.Request) bool {
-			if !config.CacheEnable || r.Method != http.MethodGet {
+			if !config.CacheEnabled || r.Method != http.MethodGet {
 				return false
 			}
 
