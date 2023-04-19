@@ -11,7 +11,7 @@ import (
 func BlockRoutes(config *utils.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			if !config.BlockRoutesEnable {
+			if !config.BlockRoutesEnabled {
 				return next(c)
 			}
 

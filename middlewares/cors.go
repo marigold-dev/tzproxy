@@ -7,7 +7,7 @@ import (
 )
 
 func CORS(config *utils.Config) echo.MiddlewareFunc {
-	if config.CORSEnable {
+	if config.CORSEnabled {
 		return middleware.CORS()
 	}
 
