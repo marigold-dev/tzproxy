@@ -9,6 +9,7 @@ TzProxy is a reverse proxy specificly for Tezos Nodes written entirely in Go.
 - [x] Blocklist routes
 - [x] Cache
 - [x] CORS
+- [x] Gzip
 
 ## Variables
 
