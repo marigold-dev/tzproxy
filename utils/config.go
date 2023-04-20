@@ -47,7 +47,7 @@ func NewConfig() *Config {
 		"/monitor/.*",
 	})
 
-	configs := &Config{
+	config := &Config{
 		Host:        GetEnv("TZPROXY_HOST", "0.0.0.0:8080"),
 		TezosHost:   GetEnv("TZPROXY_TEZOS_HOST", "http://127.0.0.1:8732"),
 		RateEnabled: GetEnvBool("TZPROXY_RATE_LIMIT_ENABLED", true),
@@ -55,7 +55,7 @@ func NewConfig() *Config {
 			Period: time.Duration(GetEnvFloat("TZPROXY_RATE_LIMIT_MINUTES", 1.0)) * time.Minute,
 			Limit:  int64(GetEnvInt("TZPROXY_RATE_LIMIT_MAX", 300)),
 		},
-		CORSEnabled:         GetEnvBool("TZPROXY_CORS_ENABLED", false),
+		CORSEnabled:         GetEnvBool("TZPROXY_CORS_ENABLED", true),
 		BlockAddress:        blockAddress,
 		BlockAddressEnabled: GetEnvBool("TZPROXY_BLOCK_ADDRESSES_ENABLED", len(blockAddress) > 0),
 		BlockRoutesEnabled:  GetEnvBool("TZPROXY_BLOCK_ROUTES_ENABLED", len(blockRoutes) > 0),
@@ -66,27 +66,27 @@ func NewConfig() *Config {
 		CacheTTL:            time.Duration(GetEnvInt("TZPROXY_CACHE_TTL", 5)) * (time.Second),
 	}
 
-	for _, route := range configs.BlockRoutes {
+	for _, route := range config.BlockRoutes {
 		regex, err := regexp.Compile(route)
 		if err != nil {
 			panic(err)
 		}
-		configs.BlockRoutesRegex = append(configs.BlockRoutesRegex, regex)
+		config.BlockRoutesRegex = append(config.BlockRoutesRegex, regex)
 	}
 
-	for _, route := range configs.DontCacheRoutes {
+	for _, route := range config.DontCacheRoutes {
 		regex, err := regexp.Compile(route)
 		if err != nil {
 			panic(err)
 		}
-		configs.DontCacheRoutesRegex = append(configs.DontCacheRoutesRegex, regex)
+		config.DontCacheRoutesRegex = append(config.DontCacheRoutesRegex, regex)
 	}
 
 	wr := diode.NewWriter(os.Stdout, 1000, 10*time.Millisecond, func(missed int) {
 		log.Printf("Logger Dropped %d messages", missed)
 	})
-	configs.Logger = zerolog.New(wr)
-	configs.RequestLoggerConfig = middleware.RequestLoggerConfig{
+	config.Logger = zerolog.New(wr)
+	config.RequestLoggerConfig = middleware.RequestLoggerConfig{
 		LogLatency:      true,
 		LogProtocol:     true,
 		LogRemoteIP:     true,
@@ -98,7 +98,7 @@ func NewConfig() *Config {
 		LogError:        true,
 		LogResponseSize: true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			configs.Logger.Info().
+			config.Logger.Info().
 				Str("ip", v.RemoteIP).
 				Str("protocol", v.Protocol).
 				Int("status", v.Status).
@@ -115,5 +115,5 @@ func NewConfig() *Config {
 		},
 	}
 
-	return configs
+	return config
 }

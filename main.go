@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"runtime"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -17,6 +18,7 @@ import (
 )
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	config := utils.NewConfig()
 	store := memory.NewStore()
 
@@ -25,6 +27,7 @@ func main() {
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
+
 	targets := []*middleware.ProxyTarget{{URL: url}}
 	balancer := middleware.NewRoundRobinBalancer(targets)
 	transport := &http.Transport{

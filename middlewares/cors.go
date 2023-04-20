@@ -9,9 +9,11 @@ func CORS(config *utils.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if config.CORSEnabled {
-				allowOriginHeader := c.Request().Header.Get("Access-Control-Allow-Origin")
+				resHeader := c.Response().Header()
+				allowOriginHeader := resHeader.Get(echo.HeaderAccessControlAllowOrigin)
 				if allowOriginHeader == "" {
-					c.Request().Header.Set("Access-Control-Allow-Origin", "*")
+					config.Logger.Printf("setting cors\n")
+					resHeader.Set(echo.HeaderAccessControlAllowOrigin, "*")
 				}
 			}
 			return next(c)
