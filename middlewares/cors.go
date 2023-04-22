@@ -12,7 +12,6 @@ func CORS(config *utils.Config) echo.MiddlewareFunc {
 				resHeader := c.Response().Header()
 				allowOriginHeader := resHeader.Get(echo.HeaderAccessControlAllowOrigin)
 				if allowOriginHeader == "" {
-					config.Logger.Printf("setting cors\n")
 					resHeader.Set(echo.HeaderAccessControlAllowOrigin, "*")
 				}
 			}
