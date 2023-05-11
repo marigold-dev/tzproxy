@@ -55,7 +55,6 @@ func main() {
 	e.Use(middlewares.RateLimit(store, config))
 	e.Use(middlewares.BlockRoutes(config))
 	e.Use(middlewares.Cache(config))
-	e.Use(middleware.Gzip())
 	e.Use(middleware.ProxyWithConfig(proxyConfig))
 
 	// Start server
