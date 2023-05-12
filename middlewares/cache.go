@@ -18,15 +18,6 @@ func Cache(config *utils.Config) echo.MiddlewareFunc {
 				return false
 			}
 
-			// Don't cache binary rpc calls
-			acceptHeader := r.Header.Get("Accept")
-			if mediaIsAccept(acceptHeader, "application/bson") {
-				return false
-			}
-			if mediaIsAccept(acceptHeader, "application/octet-stream") {
-				return false
-			}
-
 			for _, regex := range config.DontCacheRoutesRegex {
 				if regex.MatchString(r.URL.Path) {
 					return false
@@ -34,10 +25,25 @@ func Cache(config *utils.Config) echo.MiddlewareFunc {
 			}
 			return true
 		},
+		GetKey: func(r *http.Request) []byte {
+			base := r.Method + "|" + r.URL.Path
+			base += "|" + r.URL.Query().Encode()
+
+			acceptHeader := r.Header.Get("Accept")
+			if mediaIsUsed(acceptHeader, "application/bson") {
+				base += "|" + "bson"
+			} else if mediaIsUsed(acceptHeader, "application/octet-stream") {
+				base += "|" + "octet"
+			} else {
+				base += "|" + "json"
+			}
+
+			return []byte(base)
+		},
 	}, config.Cache)
 }
 
-func mediaIsAccept(acceptHeader, media string) bool {
+func mediaIsUsed(acceptHeader, media string) bool {
 	if strings.Contains(acceptHeader, media) {
 		acceptValuesByQuallity := parseQValues(acceptHeader)
 		mediaQValue, containsOctet := acceptValuesByQuallity[media]

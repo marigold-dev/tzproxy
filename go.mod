@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/labstack/echo/v4 v4.10.2 // direct
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
+	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
 	golang.org/x/time v0.3.0 // indirect; direct
 )
 
@@ -17,16 +17,16 @@ require (
 	github.com/ulule/limiter/v3 v3.11.1 // direct
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/crypto v0.8.0 // indirect
-	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/crypto v0.9.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 )
 
 require (
 	github.com/coocood/freecache v1.2.3
-	github.com/fraidev/go-echo-cache v0.0.0-20230413212051-8322ac919554
-	github.com/rs/zerolog v1.29.0
+	github.com/fraidev/go-echo-cache v0.0.0-20230512221625-1c61b39e2dc0
+	github.com/rs/zerolog v1.29.1
 )
 
 require (
