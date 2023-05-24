@@ -30,6 +30,7 @@ func main() {
 
 	targets := []*middleware.ProxyTarget{{URL: url}}
 	balancer := middleware.NewRoundRobinBalancer(targets)
+
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{

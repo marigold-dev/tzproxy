@@ -29,6 +29,8 @@ func Cache(config *utils.Config) echo.MiddlewareFunc {
 			base := r.Method + "|" + r.URL.Path
 			base += "|" + r.URL.Query().Encode()
 
+			gzip := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
+
 			acceptHeader := r.Header.Get("Accept")
 			if mediaIsUsed(acceptHeader, "application/bson") {
 				base += "|" + "bson"
@@ -36,6 +38,10 @@ func Cache(config *utils.Config) echo.MiddlewareFunc {
 				base += "|" + "octet"
 			} else {
 				base += "|" + "json"
+			}
+
+			if gzip {
+				base += "|" + "gzip"
 			}
 
 			return []byte(base)
