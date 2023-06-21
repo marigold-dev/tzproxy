@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"runtime"
 	"time"
 
 	"github.com/labstack/echo-contrib/echoprometheus"
@@ -19,8 +18,6 @@ import (
 )
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
-	println(runtime.NumCPU() - 1)
 	config := utils.NewConfig()
 	store := memory.NewStore()
 
@@ -56,7 +53,6 @@ func main() {
 	// Middlewares
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
-	e.Use(echoprometheus.NewMiddleware("proxy"))
 	e.Use(middlewares.CORS(config))
 	e.Use(middlewares.RateLimit(store, config))
 	e.Use(middlewares.BlockRoutes(config))
@@ -65,11 +61,11 @@ func main() {
 	e.Use(middleware.ProxyWithConfig(proxyConfig))
 
 	// Start metrics server
-	eMetrics := echo.New()
-	eMetrics.GET("/metrics", echoprometheus.NewHandler())
 	go func() {
-		if err := eMetrics.Start(":9000"); err != nil && err != http.ErrServerClosed {
-			eMetrics.Logger.Fatal(err)
+		metrics := echo.New()
+		metrics.GET("/metrics", echoprometheus.NewHandler())
+		if err := metrics.Start(":9000"); err != nil && err != http.ErrServerClosed {
+			metrics.Logger.Fatal(err)
 		}
 	}()
 
