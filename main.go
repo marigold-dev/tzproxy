@@ -27,7 +27,6 @@ func main() {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
-	e.Debug = true
 
 	url, err := url.Parse(config.TezosHost)
 	if err != nil {
@@ -57,7 +56,6 @@ func main() {
 	}
 
 	// Middlewares
-	e.Logger.SetLevel(log.DEBUG)
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
 	e.Use(middlewares.CORS(config))
