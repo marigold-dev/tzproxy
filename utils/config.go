@@ -1,13 +1,16 @@
 package util
 
 import (
+	"log"
+	"os"
 	"regexp"
 	"time"
 
 	"github.com/coocood/freecache"
-	"github.com/gookit/slog"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/diode"
 	"github.com/ulule/limiter/v3"
 )
 
@@ -78,35 +81,43 @@ func NewConfig() *Config {
 		config.DontCacheRoutesRegex = append(config.DontCacheRoutesRegex, regex)
 	}
 
-	slog.SetFormatter(slog.NewJSONFormatter())
+	wr := diode.NewWriter(os.Stdout, 1000, 1*time.Second, func(missed int) {
+		log.Printf("Logger Dropped %d messages", missed)
+	})
+	zl := zerolog.New(wr)
 	config.RequestLoggerConfig = middleware.RequestLoggerConfig{
 		LogLatency:      true,
 		LogProtocol:     true,
 		LogRemoteIP:     true,
 		LogMethod:       true,
 		LogURI:          true,
-		LogRoutePath:    true,
 		LogUserAgent:    true,
 		LogStatus:       true,
 		LogError:        true,
+		HandleError:     true,
 		LogResponseSize: true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			if v.Error != nil {
-				slog.Error(v.Error)
-				return v.Error
+				zl.Error().
+					Err(v.Error).
+					Str("ip", v.RemoteIP).
+					Int("status", v.Status).
+					Str("method", v.Method).
+					Str("uri", v.URI).
+					Str("user_agent", v.UserAgent).
+					Msg("request error")
+			} else {
+				zl.Info().
+					Str("ip", v.RemoteIP).
+					Str("protocol", v.Protocol).
+					Int("status", v.Status).
+					Str("method", v.Method).
+					Str("uri", v.URI).
+					Int64("elapsed", int64(v.Latency)).
+					Str("user_agent", v.UserAgent).
+					Int64("response_size", v.ResponseSize).
+					Msg("request")
 			}
-
-			slog.WithFields(slog.M{
-				"ip":            v.RemoteIP,
-				"protocol":      v.Protocol,
-				"status":        v.Status,
-				"method":        v.Method,
-				"uri":           v.URI,
-				"route":         v.RoutePath,
-				"elapsed":       int64(v.Latency),
-				"user_agent":    v.UserAgent,
-				"response_size": v.ResponseSize,
-			}).Info("request")
 
 			return nil
 		},
