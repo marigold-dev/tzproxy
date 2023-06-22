@@ -13,6 +13,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
+github.com/fraidev/echo-contrib v0.0.0-20230620005156-c96edaef2b26 h1:F7PIAGLPDtDNFBy2JuqOntVulyPEQg2drlsazs+X2oM=
+github.com/fraidev/echo-contrib v0.0.0-20230620005156-c96edaef2b26/go.mod h1:dlzTpdNJJIX8bEOUSZ6RcpLX/lvwmqohVKTc97SxuKM=
 github.com/fraidev/go-echo-cache v0.0.0-20230512221625-1c61b39e2dc0 h1:dh/Cq7V4zFhlirsicp55i7s/k+8+fDbzpqlceJQ8UYg=
 github.com/fraidev/go-echo-cache v0.0.0-20230512221625-1c61b39e2dc0/go.mod h1:NhioT/zk7TKhchW9EgEpZLQ26p0TM1HlLyEoGDrNnY0=
 github.com/golang-jwt/jwt v3.2.2+incompatible h1:IfV12K8xAKAnZqdXVzCZ+TOjboZ2keLg81eXfW3O+oY=
@@ -36,8 +38,6 @@ github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
-github.com/labstack/echo-contrib v0.15.0 h1:9K+oRU265y4Mu9zpRDv3X+DGTqUALY6oRHCSZZKCRVU=
-github.com/labstack/echo-contrib v0.15.0/go.mod h1:lei+qt5CLB4oa7VHTE0yEfQSEB9XTJI1LUqko9UWvo4=
 github.com/labstack/echo/v4 v4.3.0/go.mod h1:PvmtTvhVqKDzDQy4d3bWzPjZLzom4iQbAZy2sgZ/qI8=
 github.com/labstack/echo/v4 v4.10.3-0.20230531055333-42f07ed88040 h1:wwQuy/l8CHCMYfJkqH5azIMpbXR/hCUcYo63kf74Xao=
 github.com/labstack/echo/v4 v4.10.3-0.20230531055333-42f07ed88040/go.mod h1:OEyqf2//K1DFdE57vw2DRgWY0M7s65IVQO2FzvI4J5k=

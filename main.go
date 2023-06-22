@@ -13,7 +13,6 @@ import (
 	"github.com/fraidev/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/labstack/gommon/log"
 	"github.com/marigold-dev/tzproxy/middlewares"
 	utils "github.com/marigold-dev/tzproxy/utils"
 	"github.com/ulule/limiter/v3/drivers/store/memory"

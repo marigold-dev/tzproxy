@@ -6,9 +6,8 @@ require (
 	github.com/coocood/freecache v1.2.3
 	github.com/fraidev/go-echo-cache v0.0.0-20230512221625-1c61b39e2dc0
 	github.com/gookit/slog v0.5.2
-	github.com/labstack/echo-contrib v0.15.0
 	github.com/labstack/echo/v4 v4.10.3-0.20230531055333-42f07ed88040
-	github.com/labstack/gommon v0.4.0
+	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/ulule/limiter/v3 v3.11.2 // direct
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 )
@@ -42,3 +41,5 @@ require (
 	golang.org/x/time v0.3.0 // indirect; direct
 	google.golang.org/protobuf v1.30.0 // indirect
 )
+
+require github.com/fraidev/echo-contrib v0.0.0-20230620005156-c96edaef2b26
