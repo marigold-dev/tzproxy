@@ -4,24 +4,30 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"net/url"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/labstack/echo-contrib/echoprometheus"
+	"github.com/fraidev/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
 	"github.com/marigold-dev/tzproxy/middlewares"
 	utils "github.com/marigold-dev/tzproxy/utils"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
 
 func main() {
+
 	config := utils.NewConfig()
 	store := memory.NewStore()
 
 	e := echo.New()
+	e.HideBanner = true
+	e.HidePort = true
+	e.Debug = true
 
 	url, err := url.Parse(config.TezosHost)
 	if err != nil {
@@ -51,6 +57,7 @@ func main() {
 	}
 
 	// Middlewares
+	e.Logger.SetLevel(log.DEBUG)
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
 	e.Use(middlewares.CORS(config))
@@ -63,7 +70,18 @@ func main() {
 	// Start metrics server
 	go func() {
 		metrics := echo.New()
+
+		pp := http.NewServeMux()
+		pp.HandleFunc("/debug/pprof/", pprof.Index)
+		pp.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		pp.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		pp.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		pp.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		metrics.GET("/debug/pprof/*", echo.WrapHandler(pp))
+
 		metrics.GET("/metrics", echoprometheus.NewHandler())
+		metrics.HideBanner = true
+		metrics.HidePort = true
 		if err := metrics.Start(":9000"); err != nil && err != http.ErrServerClosed {
 			metrics.Logger.Fatal(err)
 		}

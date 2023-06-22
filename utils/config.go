@@ -1,16 +1,13 @@
 package util
 
 import (
-	"log"
-	"os"
 	"regexp"
 	"time"
 
 	"github.com/coocood/freecache"
+	"github.com/gookit/slog"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/diode"
 	"github.com/ulule/limiter/v3"
 )
 
@@ -28,7 +25,6 @@ type Config struct {
 	BlockAddress         map[string]bool
 	BlockRoutes          []string
 	BlockRoutesRegex     []*regexp.Regexp
-	Logger               zerolog.Logger
 	Cache                *freecache.Cache
 	CacheTTL             time.Duration
 	RequestLoggerConfig  middleware.RequestLoggerConfig
@@ -82,10 +78,7 @@ func NewConfig() *Config {
 		config.DontCacheRoutesRegex = append(config.DontCacheRoutesRegex, regex)
 	}
 
-	wr := diode.NewWriter(os.Stdout, 1000, 10*time.Millisecond, func(missed int) {
-		log.Printf("Logger Dropped %d messages", missed)
-	})
-	config.Logger = zerolog.New(wr)
+	slog.SetFormatter(slog.NewJSONFormatter())
 	config.RequestLoggerConfig = middleware.RequestLoggerConfig{
 		LogLatency:      true,
 		LogProtocol:     true,
@@ -98,18 +91,22 @@ func NewConfig() *Config {
 		LogError:        true,
 		LogResponseSize: true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			config.Logger.Info().
-				Str("ip", v.RemoteIP).
-				Str("protocol", v.Protocol).
-				Int("status", v.Status).
-				Str("method", v.Method).
-				Str("uri", v.URI).
-				Str("route", v.RoutePath).
-				Err(v.Error).
-				Str("elapsed", v.Latency.String()).
-				Str("user_agent", v.UserAgent).
-				Int64("response_size", v.ResponseSize).
-				Msg("request")
+			if v.Error != nil {
+				slog.Error(v.Error)
+				return v.Error
+			}
+
+			slog.WithFields(slog.M{
+				"ip":            v.RemoteIP,
+				"protocol":      v.Protocol,
+				"status":        v.Status,
+				"method":        v.Method,
+				"uri":           v.URI,
+				"route":         v.RoutePath,
+				"elapsed":       int64(v.Latency),
+				"user_agent":    v.UserAgent,
+				"response_size": v.ResponseSize,
+			}).Info("request")
 
 			return nil
 		},

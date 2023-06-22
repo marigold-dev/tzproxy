@@ -6,7 +6,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	utils "github.com/marigold-dev/tzproxy/utils"
-	"github.com/rs/zerolog/log"
 	"github.com/ulule/limiter/v3"
 )
 
@@ -25,7 +24,6 @@ func RateLimit(store limiter.Store, config *utils.Config) echo.MiddlewareFunc {
 			ip := c.RealIP()
 			limiterCtx, err := ipRateLimiter.Get(c.Request().Context(), ip)
 			if err != nil {
-				log.Error().Err(err).Msgf("IPRateLimit - ipRateLimiter.Get - %s on %s", ip, c.Request().URL)
 				return c.JSON(http.StatusInternalServerError, echo.Map{
 					"success": false,
 					"message": err,
@@ -38,7 +36,6 @@ func RateLimit(store limiter.Store, config *utils.Config) echo.MiddlewareFunc {
 			h.Set("X-RateLimit-Reset", strconv.FormatInt(limiterCtx.Reset, 10))
 
 			if limiterCtx.Reached {
-				log.Info().Msgf("Too Many Requests from %s on %s", ip, c.Request().URL)
 				return c.JSON(http.StatusTooManyRequests, echo.Map{
 					"success": false,
 					"message": "Too Many Requests on " + c.Request().URL.String(),
