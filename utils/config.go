@@ -2,6 +2,9 @@ package util
 
 import (
 	"log"
+	"net"
+	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"time"
@@ -23,6 +26,8 @@ type Config struct {
 	BlockRoutesEnabled   bool
 	CORSEnabled          bool
 	CacheEnabled         bool
+	PprofEnabled         bool
+	GzipEnabled          bool
 	DontCacheRoutes      []string
 	DontCacheRoutesRegex []*regexp.Regexp
 	BlockAddress         map[string]bool
@@ -30,7 +35,9 @@ type Config struct {
 	BlockRoutesRegex     []*regexp.Regexp
 	Cache                *freecache.Cache
 	CacheTTL             time.Duration
-	RequestLoggerConfig  middleware.RequestLoggerConfig
+	CGPercent            int
+	RequestLoggerConfig  *middleware.RequestLoggerConfig
+	ProxyConfig          *middleware.ProxyConfig
 }
 
 func NewConfig() *Config {
@@ -45,10 +52,40 @@ func NewConfig() *Config {
 	dontCacheRoutes := GetEnvSlice("TZPROXY_CACHE_ROUTES", []string{
 		"/monitor/.*",
 	})
+	cacheSizeMB := GetEnvInt("TZPROXY_CACHE_SIZE_MB", 100)
+	pprofEnabled := GetEnvBool("TZPROXY_ENABLE_PPROF", false)
+	gzipEnabled := GetEnvBool("TZPROXY_ENABLE_GZIP", true)
+
+	tezosHost := GetEnv("TZPROXY_TEZOS_HOST", "http://127.0.0.1:8732")
+	url, err := url.Parse(tezosHost)
+	if err != nil {
+		log.Fatal(err)
+	}
+	balancer := middleware.NewRoundRobinBalancer([]*middleware.ProxyTarget{{URL: url}})
+
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   65 * time.Second,
+			KeepAlive: 65 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          300,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	proxyConfig := middleware.ProxyConfig{
+		Skipper:    middleware.DefaultSkipper,
+		ContextKey: "target",
+		Balancer:   balancer,
+		Transport:  transport,
+	}
 
 	config := &Config{
 		Host:        GetEnv("TZPROXY_HOST", "0.0.0.0:8080"),
-		TezosHost:   GetEnv("TZPROXY_TEZOS_HOST", "http://127.0.0.1:8732"),
+		TezosHost:   tezosHost,
 		RateEnabled: GetEnvBool("TZPROXY_RATE_LIMIT_ENABLED", true),
 		Rate: &limiter.Rate{
 			Period: time.Duration(GetEnvFloat("TZPROXY_RATE_LIMIT_MINUTES", 1.0)) * time.Minute,
@@ -61,8 +98,12 @@ func NewConfig() *Config {
 		BlockRoutes:         blockRoutes,
 		CacheEnabled:        GetEnvBool("TZPROXY_CACHE_ENABLED", true),
 		DontCacheRoutes:     dontCacheRoutes,
-		Cache:               freecache.NewCache(1024 * 1024 * 10),
+		Cache:               freecache.NewCache(1024 * 1024 * cacheSizeMB),
 		CacheTTL:            time.Duration(GetEnvInt("TZPROXY_CACHE_TTL", 5)) * (time.Second),
+		CGPercent:           GetEnvInt("GO_GC", 20),
+		ProxyConfig:         &proxyConfig,
+		PprofEnabled:        pprofEnabled,
+		GzipEnabled:         gzipEnabled,
 	}
 
 	for _, route := range config.BlockRoutes {
@@ -85,7 +126,7 @@ func NewConfig() *Config {
 		log.Printf("Logger Dropped %d messages", missed)
 	})
 	zl := zerolog.New(wr)
-	config.RequestLoggerConfig = middleware.RequestLoggerConfig{
+	config.RequestLoggerConfig = &middleware.RequestLoggerConfig{
 		LogLatency:      true,
 		LogProtocol:     true,
 		LogRemoteIP:     true,

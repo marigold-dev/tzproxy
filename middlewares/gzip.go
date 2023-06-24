@@ -11,7 +11,7 @@ import (
 func Gzip(config *utils.Config) echo.MiddlewareFunc {
 	return middleware.GzipWithConfig(middleware.GzipConfig{
 		Skipper: func(c echo.Context) bool {
-			if strings.Contains(c.Request().Header.Get("Accept-Encoding"), "gzip") {
+			if config.GzipEnabled && strings.Contains(c.Request().Header.Get("Accept-Encoding"), "gzip") {
 				return false
 			}
 			return true

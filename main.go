@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
-	"net"
 	"net/http"
 	"net/http/pprof"
-	"net/url"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"time"
 
 	"github.com/fraidev/echo-contrib/echoprometheus"
@@ -15,67 +14,42 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/marigold-dev/tzproxy/middlewares"
 	utils "github.com/marigold-dev/tzproxy/utils"
-	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
 
 func main() {
-
 	config := utils.NewConfig()
-	store := memory.NewStore()
+
+	// As we allocate a lot of memory with cache, we need to
+	// set the GC to 20% to avoid long GC pauses
+	debug.SetGCPercent(config.CGPercent)
 
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
 
-	url, err := url.Parse(config.TezosHost)
-	if err != nil {
-		e.Logger.Fatal(err)
-	}
-
-	targets := []*middleware.ProxyTarget{{URL: url}}
-	balancer := middleware.NewRoundRobinBalancer(targets)
-
-	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   65 * time.Second,
-			KeepAlive: 65 * time.Second,
-		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          300,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
-	proxyConfig := middleware.ProxyConfig{
-		Skipper:    middleware.DefaultSkipper,
-		ContextKey: "target",
-		Balancer:   balancer,
-		Transport:  transport,
-	}
-
 	// Middlewares
 	e.Use(middleware.Recover())
-	e.Use(middleware.RequestLoggerWithConfig(config.RequestLoggerConfig))
+	e.Use(middleware.RequestLoggerWithConfig(*config.RequestLoggerConfig))
 	e.Use(middlewares.CORS(config))
-	e.Use(middlewares.RateLimit(store, config))
+	e.Use(middlewares.RateLimit(config))
 	e.Use(middlewares.BlockRoutes(config))
 	e.Use(middlewares.Cache(config))
 	e.Use(middlewares.Gzip(config))
-	e.Use(middleware.ProxyWithConfig(proxyConfig))
+	e.Use(middleware.ProxyWithConfig(*config.ProxyConfig))
 
 	// Start metrics server
 	go func() {
 		metrics := echo.New()
 
-		pp := http.NewServeMux()
-		pp.HandleFunc("/debug/pprof/", pprof.Index)
-		pp.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		pp.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		pp.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		pp.HandleFunc("/debug/pprof/trace", pprof.Trace)
-		metrics.GET("/debug/pprof/*", echo.WrapHandler(pp))
-
+		if config.PprofEnabled {
+			pp := http.NewServeMux()
+			pp.HandleFunc("/debug/pprof/", pprof.Index)
+			pp.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+			pp.HandleFunc("/debug/pprof/profile", pprof.Profile)
+			pp.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+			pp.HandleFunc("/debug/pprof/trace", pprof.Trace)
+			metrics.GET("/debug/pprof/*", echo.WrapHandler(pp))
+		}
 		metrics.GET("/metrics", echoprometheus.NewHandler())
 		metrics.HideBanner = true
 		metrics.HidePort = true
