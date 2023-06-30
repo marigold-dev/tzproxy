@@ -28,7 +28,7 @@ type Config struct {
 	CacheEnabled         bool
 	PprofEnabled         bool
 	GzipEnabled          bool
-	DontCacheRoutes      []string
+	CacheDisabledRoutes  []string
 	DontCacheRoutesRegex []*regexp.Regexp
 	BlockAddress         map[string]bool
 	BlockRoutes          []string
@@ -97,7 +97,7 @@ func NewConfig() *Config {
 		BlockRoutesEnabled:  GetEnvBool("TZPROXY_BLOCK_ROUTES_ENABLED", len(blockRoutes) > 0),
 		BlockRoutes:         blockRoutes,
 		CacheEnabled:        GetEnvBool("TZPROXY_CACHE_ENABLED", true),
-		DontCacheRoutes:     cacheDisabledRoutes,
+		CacheDisabledRoutes: cacheDisabledRoutes,
 		Cache:               freecache.NewCache(1024 * 1024 * cacheSizeMB),
 		CacheTTL:            time.Duration(GetEnvInt("TZPROXY_CACHE_TTL", 5)) * (time.Second),
 		CGPercent:           GetEnvInt("GO_GC", 20),
@@ -114,7 +114,7 @@ func NewConfig() *Config {
 		config.BlockRoutesRegex = append(config.BlockRoutesRegex, regex)
 	}
 
-	for _, route := range config.DontCacheRoutes {
+	for _, route := range config.CacheDisabledRoutes {
 		regex, err := regexp.Compile(route)
 		if err != nil {
 			panic(err)
