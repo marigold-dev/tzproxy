@@ -18,26 +18,26 @@ import (
 )
 
 type Config struct {
-	Host                 string
-	TezosHost            string
-	Rate                 *limiter.Rate
-	RateEnabled          bool
-	BlockAddressEnabled  bool
-	BlockRoutesEnabled   bool
-	CORSEnabled          bool
-	CacheEnabled         bool
-	PprofEnabled         bool
-	GzipEnabled          bool
-	CacheDisabledRoutes  []string
-	DontCacheRoutesRegex []*regexp.Regexp
-	BlockAddress         map[string]bool
-	BlockRoutes          []string
-	BlockRoutesRegex     []*regexp.Regexp
-	Cache                *freecache.Cache
-	CacheTTL             time.Duration
-	CGPercent            int
-	RequestLoggerConfig  *middleware.RequestLoggerConfig
-	ProxyConfig          *middleware.ProxyConfig
+	Host                     string
+	TezosHost                string
+	Rate                     *limiter.Rate
+	RateEnabled              bool
+	BlockAddressEnabled      bool
+	BlockRoutesEnabled       bool
+	CORSEnabled              bool
+	CacheEnabled             bool
+	PprofEnabled             bool
+	GzipEnabled              bool
+	CacheDisabledRoutes      []string
+	CacheDisabledRoutesRegex []*regexp.Regexp
+	BlockAddress             map[string]bool
+	BlockRoutes              []string
+	BlockRoutesRegex         []*regexp.Regexp
+	Cache                    *freecache.Cache
+	CacheTTL                 time.Duration
+	CGPercent                int
+	RequestLoggerConfig      *middleware.RequestLoggerConfig
+	ProxyConfig              *middleware.ProxyConfig
 }
 
 func NewConfig() *Config {
@@ -119,7 +119,7 @@ func NewConfig() *Config {
 		if err != nil {
 			panic(err)
 		}
-		config.DontCacheRoutesRegex = append(config.DontCacheRoutesRegex, regex)
+		config.CacheDisabledRoutesRegex = append(config.CacheDisabledRoutesRegex, regex)
 	}
 
 	wr := diode.NewWriter(os.Stdout, 1000, 1*time.Second, func(missed int) {
