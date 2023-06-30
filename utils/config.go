@@ -49,7 +49,7 @@ func NewConfig() *Config {
 		"/helpers/baking_rights", "/helpers/endorsing_rights",
 		"/chains/main/blocks/.*/context/contracts(/?)$",
 	})
-	dontCacheRoutes := GetEnvSlice("TZPROXY_CACHE_ROUTES", []string{
+	cacheDisabledRoutes := GetEnvSlice("TZPROXY_CACHE_DISABLED_ROUTES", []string{
 		"/monitor/.*",
 	})
 	cacheSizeMB := GetEnvInt("TZPROXY_CACHE_SIZE_MB", 100)
@@ -97,7 +97,7 @@ func NewConfig() *Config {
 		BlockRoutesEnabled:  GetEnvBool("TZPROXY_BLOCK_ROUTES_ENABLED", len(blockRoutes) > 0),
 		BlockRoutes:         blockRoutes,
 		CacheEnabled:        GetEnvBool("TZPROXY_CACHE_ENABLED", true),
-		DontCacheRoutes:     dontCacheRoutes,
+		DontCacheRoutes:     cacheDisabledRoutes,
 		Cache:               freecache.NewCache(1024 * 1024 * cacheSizeMB),
 		CacheTTL:            time.Duration(GetEnvInt("TZPROXY_CACHE_TTL", 5)) * (time.Second),
 		CGPercent:           GetEnvInt("GO_GC", 20),

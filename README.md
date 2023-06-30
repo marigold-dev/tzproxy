@@ -24,7 +24,7 @@ TzProxy is a reverse proxy specificly for Tezos Nodes written entirely in Go.
 - `TZPROXY_BLOCK_ROUTES_ENABLED` is a flag to block the Tezos node's routes. 
 - `TZPROXY_BLOCK_ROUTES` is the Tezos nodes routes that will be blocked on the proxy.conf.
 - `TZPROXY_CACHE_ENABLED` is the flag to cache enable cache.
-- `TZPROXY_CACHE_ROUTES` is the routes to cache.
+- `TZPROXY_CACHE_DISABLED_ROUTES` is the routes to cache.
 - `TZPROXY_CACHE_SIZE_MB` is the size of the cache in megabytes.
 - `TZPROXY_CACHE_TTL` is the time to live in seconds for cache.
 - `TZPROXY_ENABLE_PPROF` is the flag to enable pprof.
