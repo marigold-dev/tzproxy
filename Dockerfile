@@ -4,9 +4,7 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 COPY . .
-# To use the libc functions for net and os/user, and still get a static binary (for containers)
-# https://github.com/remotemobprogramming/mob/issues/393
-RUN go build -ldflags "-linkmode 'external' -extldflags '-static'" -o /tzproxy
+RUN go build -o /tzproxy
 
 FROM debian:12.0-slim
 COPY --from=builder /tzproxy ./

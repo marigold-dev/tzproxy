@@ -5,10 +5,10 @@ go 1.20
 require (
 	github.com/coocood/freecache v1.2.3
 	github.com/fraidev/go-echo-cache v0.0.0-20230512221625-1c61b39e2dc0
-	github.com/labstack/echo/v4 v4.10.3-0.20230531055333-42f07ed88040
+	github.com/labstack/echo/v4 v4.11.1
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/ulule/limiter/v3 v3.11.2 // direct
-	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
+	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
 )
 
 require (
@@ -26,14 +26,14 @@ require (
 	github.com/prometheus/client_golang v1.16.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
-	github.com/prometheus/procfs v0.11.0 // indirect
-	github.com/rs/zerolog v1.29.1
+	github.com/prometheus/procfs v0.11.1 // indirect
+	github.com/rs/zerolog v1.30.0
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/net v0.11.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	golang.org/x/crypto v0.12.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect; direct
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 )
