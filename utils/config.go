@@ -19,6 +19,7 @@ import (
 
 type Config struct {
 	Host                     string
+	MetricsHost              string
 	TezosHost                string
 	Rate                     *limiter.Rate
 	RateEnabled              bool
@@ -85,6 +86,7 @@ func NewConfig() *Config {
 
 	config := &Config{
 		Host:        GetEnv("TZPROXY_HOST", "0.0.0.0:8080"),
+		MetricsHost: GetEnv("TZPROXY_METRICS_HOST", "0.0.0.0:9000"),
 		TezosHost:   tezosHost,
 		RateEnabled: GetEnvBool("TZPROXY_RATE_LIMIT_ENABLED", true),
 		Rate: &limiter.Rate{

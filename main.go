@@ -53,7 +53,7 @@ func main() {
 		metrics.GET("/metrics", echoprometheus.NewHandler())
 		metrics.HideBanner = true
 		metrics.HidePort = true
-		if err := metrics.Start(":9000"); err != nil && err != http.ErrServerClosed {
+		if err := metrics.Start(config.MetricsHost); err != nil && err != http.ErrServerClosed {
 			metrics.Logger.Fatal(err)
 		}
 	}()
