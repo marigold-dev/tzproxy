@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - "main"
+  push:
+    tags:
+      - "v*.*.*"
 
 jobs:
   docker:
@@ -41,4 +44,5 @@ jobs:
           tags: |
             ghcr.io/marigold-dev/tzproxy:latest
             ghcr.io/marigold-dev/tzproxy:latest-${{ steps.vars.outputs.sha_short }}-${{ steps.vars.outputs.date }}
+            ghcr.io/marigold-dev/tzproxy:${{github.ref_name}}
 

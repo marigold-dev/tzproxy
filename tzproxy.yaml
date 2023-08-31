@@ -1,0 +1,31 @@
+block_address: {}
+block_address_enabled: false
+block_routes:
+    - /injection/block
+    - /injection/protocol
+    - /network.*
+    - /workers.*
+    - /worker.*
+    - /stats.*
+    - /config
+    - /chains/main/blocks/.*/helpers/baking_rights
+    - /chains/main/blocks/.*/helpers/endorsing_rights
+    - /helpers/baking_rights
+    - /helpers/endorsing_rights
+    - /chains/main/blocks/.*/context/contracts(/?)$
+block_routes_enabled: true
+cache_disabled_routes:
+    - /monitor/.*
+cache_enabled: true
+cache_size_mb: 100
+cache_ttl: 5
+cg_percent: 20
+cors_enabled: true
+gzip_enabled: true
+host: 0.0.0.0:8080
+metrics_host: 0.0.0.0:9000
+pprof_enabled: false
+rate_limit_enabled: true
+rate_limit_max: 300
+rate_limit_minutes: 1
+tezos_host: ""

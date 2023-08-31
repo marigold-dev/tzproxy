@@ -21,7 +21,7 @@ func main() {
 
 	// As we allocate a lot of memory with cache, we need to
 	// set the GC to 20% to avoid long GC pauses
-	debug.SetGCPercent(config.CGPercent)
+	debug.SetGCPercent(config.ConfigFile.CGPercent)
 
 	e := echo.New()
 	e.HideBanner = true
@@ -41,7 +41,7 @@ func main() {
 	go func() {
 		metrics := echo.New()
 
-		if config.PprofEnabled {
+		if config.ConfigFile.PprofEnabled {
 			pp := http.NewServeMux()
 			pp.HandleFunc("/debug/pprof/", pprof.Index)
 			pp.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -53,14 +53,14 @@ func main() {
 		metrics.GET("/metrics", echoprometheus.NewHandler())
 		metrics.HideBanner = true
 		metrics.HidePort = true
-		if err := metrics.Start(config.MetricsHost); err != nil && err != http.ErrServerClosed {
+		if err := metrics.Start(config.ConfigFile.MetricsHost); err != nil && err != http.ErrServerClosed {
 			metrics.Logger.Fatal(err)
 		}
 	}()
 
 	// Start proxy
 	go func() {
-		if err := e.Start(config.Host); err != nil && err != http.ErrServerClosed {
+		if err := e.Start(config.ConfigFile.Host); err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal("Shutting down the server")
 			e.Logger.Fatal(err)
 		}
