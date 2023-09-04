@@ -19,9 +19,11 @@ import (
 func main() {
 	config := utils.NewConfig()
 
-	// As we allocate a lot of memory with cache, we need to
-	// set the GC to 20% to avoid long GC pauses
-	debug.SetGCPercent(config.ConfigFile.CGPercent)
+	// As we allocate a lot of memory with cache,
+	// we need to set a low GC percent to avoid long GC pauses
+	// the default value is 20,
+	// which means that the GC will run when the allocated memory reaches 20% of the used memory
+	debug.SetGCPercent(config.ConfigFile.GC.Percent)
 
 	e := echo.New()
 	e.HideBanner = true
@@ -32,31 +34,33 @@ func main() {
 	e.Use(middleware.RequestLoggerWithConfig(*config.RequestLoggerConfig))
 	e.Use(middlewares.CORS(config))
 	e.Use(middlewares.RateLimit(config))
-	e.Use(middlewares.BlockRoutes(config))
+	e.Use(middlewares.DenyRoutes(config))
 	e.Use(middlewares.Cache(config))
 	e.Use(middlewares.Gzip(config))
 	e.Use(middleware.ProxyWithConfig(*config.ProxyConfig))
 
 	// Start metrics server
-	go func() {
-		metrics := echo.New()
+	if config.ConfigFile.Metrics.Enabled {
+		go func() {
+			metrics := echo.New()
 
-		if config.ConfigFile.PprofEnabled {
-			pp := http.NewServeMux()
-			pp.HandleFunc("/debug/pprof/", pprof.Index)
-			pp.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-			pp.HandleFunc("/debug/pprof/profile", pprof.Profile)
-			pp.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-			pp.HandleFunc("/debug/pprof/trace", pprof.Trace)
-			metrics.GET("/debug/pprof/*", echo.WrapHandler(pp))
-		}
-		metrics.GET("/metrics", echoprometheus.NewHandler())
-		metrics.HideBanner = true
-		metrics.HidePort = true
-		if err := metrics.Start(config.ConfigFile.MetricsHost); err != nil && err != http.ErrServerClosed {
-			metrics.Logger.Fatal(err)
-		}
-	}()
+			if config.ConfigFile.Metrics.Pprof {
+				pp := http.NewServeMux()
+				pp.HandleFunc("/debug/pprof/", pprof.Index)
+				pp.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+				pp.HandleFunc("/debug/pprof/profile", pprof.Profile)
+				pp.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+				pp.HandleFunc("/debug/pprof/trace", pprof.Trace)
+				metrics.GET("/debug/pprof/*", echo.WrapHandler(pp))
+			}
+			metrics.GET("/metrics", echoprometheus.NewHandler())
+			metrics.HideBanner = true
+			metrics.HidePort = true
+			if err := metrics.Start(config.ConfigFile.Metrics.Host); err != nil && err != http.ErrServerClosed {
+				metrics.Logger.Fatal(err)
+			}
+		}()
+	}
 
 	// Start proxy
 	go func() {

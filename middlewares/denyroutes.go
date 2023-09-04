@@ -8,10 +8,10 @@ import (
 	utils "github.com/marigold-dev/tzproxy/utils"
 )
 
-func BlockRoutes(config *utils.Config) echo.MiddlewareFunc {
+func DenyRoutes(config *utils.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			if !config.BlockRoutesEnabled {
+			if !config.ConfigFile.DenyRoutes.Enabled {
 				return next(c)
 			}
 

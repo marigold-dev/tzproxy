@@ -14,7 +14,7 @@ func Cache(config *utils.Config) echo.MiddlewareFunc {
 	return cache.New(&cache.Config{
 		TTL: config.CacheTTL,
 		Cache: func(r *http.Request) bool {
-			if !config.CacheEnabled || r.Method != http.MethodGet {
+			if !config.ConfigFile.Cache.Enabled || r.Method != http.MethodGet {
 				return false
 			}
 
@@ -46,7 +46,7 @@ func Cache(config *utils.Config) echo.MiddlewareFunc {
 
 			return []byte(base)
 		},
-	}, config.Cache)
+	}, config.CacheStorage)
 }
 
 func mediaIsUsed(acceptHeader, media string) bool {

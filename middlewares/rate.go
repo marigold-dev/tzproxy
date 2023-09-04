@@ -20,7 +20,7 @@ func RateLimit(config *utils.Config) echo.MiddlewareFunc {
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			if !config.RateEnabled {
+			if !config.ConfigFile.RateLimit.Enabled {
 				return next(c)
 			}
 			ip := c.RealIP()

@@ -8,7 +8,7 @@ import (
 func CORS(config *utils.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if config.CORSEnabled {
+			if config.ConfigFile.CORS.Enabled {
 				resHeader := c.Response().Header()
 				allowOriginHeader := resHeader.Get(echo.HeaderAccessControlAllowOrigin)
 				if allowOriginHeader == "" {

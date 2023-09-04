@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/coocood/freecache"
@@ -20,6 +21,7 @@ import (
 
 type Config struct {
 	ConfigFile               *ConfigFile
+	DenyListTable            map[string]bool
 	Rate                     *limiter.Rate
 	CacheDisabledRoutesRegex []*regexp.Regexp
 	BlockRoutesRegex         []*regexp.Regexp
@@ -29,96 +31,165 @@ type Config struct {
 	ProxyConfig              *middleware.ProxyConfig
 }
 
+type Logger struct {
+	BunchSize           int `mapstructure:"bunch_size"`
+	PoolIntervalSeconds int `mapstructure:"pool_interval_seconds"`
+}
+
+type RateLimit struct {
+	Enabled bool    `mapstructure:"enabled"`
+	Minutes float64 `mapstructure:"minutes"`
+	Max     int     `mapstructure:"max"`
+}
+
+type Cache struct {
+	Enabled        bool     `mapstructure:"enabled"`
+	TTL            int      `mapstructure:"ttl"`
+	DisabledRoutes []string `mapstructure:"disabled_routes"`
+	SizeMB         int      `mapstructure:"size_mb"`
+}
+
+type DenyList struct {
+	Enabled bool     `mapstructure:"enabled"`
+	Values  []string `mapstructure:"values"`
+}
+
+type DenyRoutes struct {
+	Enabled bool     `mapstructure:"enabled"`
+	Values  []string `mapstructure:"values"`
+}
+
+type Metrics struct {
+	Host    string `mapstructure:"host"`
+	Enabled bool   `mapstructure:"enabled"`
+	Pprof   bool   `mapstructure:"pprof"`
+}
+
+type GC struct {
+	Percent int `mapstructure:"percent"`
+}
+
+type CORS struct {
+	Enabled bool `mapstructure:"enabled"`
+}
+
+type GZIP struct {
+	Enabled bool `mapstructure:"enabled"`
+}
+
 type ConfigFile struct {
-	Host                string          `mapstructure:"host"`
-	MetricsHost         string          `mapstructure:"metrics_host"`
-	TezosHost           string          `mapstructure:"tezos_host"`
-	RateLimitEnabled    bool            `mapstructure:"rate_limit_enabled"`
-	RateLimitMinutes    float64         `mapstructure:"rate_limit_minutes"`
-	RateLimitMax        int             `mapstructure:"rate_limit_max"`
-	BlockAddressEnabled bool            `mapstructure:"block_address_enabled"`
-	BlockRoutesEnabled  bool            `mapstructure:"block_routes_enabled"`
-	CORSEnabled         bool            `mapstructure:"cors_enabled"`
-	CacheEnabled        bool            `mapstructure:"cache_enabled"`
-	CacheTTL            int             `mapstructure:"cache_ttl"`
-	PprofEnabled        bool            `mapstructure:"pprof_enabled"`
-	GzipEnabled         bool            `mapstructure:"gzip_enabled"`
-	CacheDisabledRoutes []string        `mapstructure:"cache_disabled_routes"`
-	CacheSizeMB         int             `mapstructure:"cache_size_mb"`
-	BlockAddress        map[string]bool `mapstructure:"block_address"`
-	BlockRoutes         []string        `mapstructure:"block_routes"`
-	CGPercent           int             `mapstructure:"cg_percent"`
+	Logger     Logger     `mapstructure:"logger"`
+	RateLimit  RateLimit  `mapstructure:"rate_limit"`
+	Cache      Cache      `mapstructure:"cache"`
+	DenyList   DenyList   `mapstructure:"deny_list"`
+	DenyRoutes DenyRoutes `mapstructure:"deny_routes"`
+	Metrics    Metrics    `mapstructure:"metrics"`
+	GC         GC         `mapstructure:"gc"`
+	CORS       CORS       `mapstructure:"cors"`
+	GZIP       GZIP       `mapstructure:"gzip"`
+	Host       string     `mapstructure:"host"`
+	TezosHost  string     `mapstructure:"tezos_host"`
 }
 
 var defaultConfig = &ConfigFile{
-	Host:               "0.0.0.0:8080",
-	MetricsHost:        "0.0.0.0:9000",
-	BlockRoutesEnabled: true,
-	BlockRoutes: []string{
-		"/injection/block", "/injection/protocol", "/network.*", "/workers.*",
-		"/worker.*", "/stats.*", "/config", "/chains/main/blocks/.*/helpers/baking_rights",
-		"/chains/main/blocks/.*/helpers/endorsing_rights",
-		"/helpers/baking_rights", "/helpers/endorsing_rights",
-		"/chains/main/blocks/.*/context/contracts(/?)$",
+	Host:      "0.0.0.0:8080",
+	TezosHost: "127.0.0.1:8732",
+	Logger: Logger{
+		BunchSize:           100,
+		PoolIntervalSeconds: 5,
 	},
-	CacheDisabledRoutes: []string{
-		"/monitor/.*",
+	RateLimit: RateLimit{
+		Enabled: false,
+		Minutes: 1,
+		Max:     300,
 	},
-	CacheEnabled:        true,
-	CacheSizeMB:         100,
-	CacheTTL:            5,
-	CGPercent:           20,
-	GzipEnabled:         true,
-	PprofEnabled:        false,
-	RateLimitEnabled:    true,
-	RateLimitMinutes:    1.0,
-	RateLimitMax:        300,
-	CORSEnabled:         true,
-	BlockAddressEnabled: false,
-	BlockAddress:        map[string]bool{},
+	Cache: Cache{
+		Enabled:        true,
+		TTL:            5,
+		DisabledRoutes: []string{"/monitor/.*"},
+		SizeMB:         100,
+	},
+	DenyList: DenyList{
+		Enabled: false,
+		Values:  []string{},
+	},
+	DenyRoutes: DenyRoutes{
+		Enabled: true,
+		Values: []string{
+			"/injection/block", "/injection/protocol", "/network.*", "/workers.*",
+			"/worker.*", "/stats.*", "/config", "/chains/main/blocks/.*/helpers/baking_rights",
+			"/chains/main/blocks/.*/helpers/endorsing_rights",
+			"/helpers/baking_rights", "/helpers/endorsing_rights",
+			"/chains/main/blocks/.*/context/contracts(/?)$",
+		},
+	},
+	Metrics: Metrics{
+		Host:    "0.0.0.0:9000",
+		Enabled: true,
+		Pprof:   false,
+	},
+	GC: GC{
+		Percent: 20,
+	},
+	GZIP: GZIP{
+		Enabled: true,
+	},
+	CORS: CORS{
+		Enabled: true,
+	},
 }
 
 func NewConfig() *Config {
-	// Set default values for configuration
-	viper.SetDefault("host", defaultConfig.Host)
-	viper.SetDefault("metrics_host", defaultConfig.MetricsHost)
-	viper.SetDefault("tezos_host", defaultConfig.TezosHost)
-	viper.SetDefault("rate_limit_enabled", defaultConfig.RateLimitEnabled)
-	viper.SetDefault("rate_limit_minutes", defaultConfig.RateLimitMinutes)
-	viper.SetDefault("rate_limit_max", defaultConfig.RateLimitMax)
-	viper.SetDefault("block_address_enabled", defaultConfig.BlockAddressEnabled)
-	viper.SetDefault("block_routes_enabled", defaultConfig.BlockRoutesEnabled)
-	viper.SetDefault("cors_enabled", defaultConfig.CORSEnabled)
-	viper.SetDefault("cache_enabled", defaultConfig.CacheEnabled)
-	viper.SetDefault("cache_ttl", defaultConfig.CacheTTL)
-	viper.SetDefault("pprof_enabled", defaultConfig.PprofEnabled)
-	viper.SetDefault("gzip_enabled", defaultConfig.GzipEnabled)
-	viper.SetDefault("cache_disabled_routes", defaultConfig.CacheDisabledRoutes)
-	viper.SetDefault("cache_size_mb", defaultConfig.CacheSizeMB)
-	viper.SetDefault("block_address", defaultConfig.BlockAddress)
-	viper.SetDefault("block_routes", defaultConfig.BlockRoutes)
-	viper.SetDefault("cg_percent", defaultConfig.CGPercent)
-
 	// Set the configuration file name and path
 	viper.SetConfigName("tzproxy")
 	viper.SetConfigType("yaml")
-	// viper.AutomaticEnv()
 	viper.AddConfigPath(".")
 
 	// Read the configuration file
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatalf("Error reading config file: %v", err)
-	}
+	viper.ReadInConfig()
+
+	// Set the environment variables prefix
+	viper.SetEnvPrefix("TZPROXY")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	viper.AutomaticEnv()
+	viper.SetTypeByDefaultValue(true)
+
+	// Set default values for configuration
+	viper.SetDefault("host", defaultConfig.Host)
+	viper.SetDefault("tezos_host", defaultConfig.TezosHost)
+	viper.SetDefault("logger.bunch_size", defaultConfig.Logger.BunchSize)
+	viper.SetDefault("logger.pool_interval_seconds", defaultConfig.Logger.PoolIntervalSeconds)
+	viper.SetDefault("cache.enabled", defaultConfig.Cache.Enabled)
+	viper.SetDefault("cache.ttl", defaultConfig.Cache.TTL)
+	viper.SetDefault("cache.disabled_routes", defaultConfig.Cache.DisabledRoutes)
+	viper.SetDefault("cache.size_mb", defaultConfig.Cache.SizeMB)
+	viper.SetDefault("rate_limit.enabled", defaultConfig.RateLimit.Enabled)
+	viper.SetDefault("rate_limit.minutes", defaultConfig.RateLimit.Minutes)
+	viper.SetDefault("rate_limit.max", defaultConfig.RateLimit.Max)
+	viper.SetDefault("deny_list.enabled", defaultConfig.DenyList.Enabled)
+	viper.SetDefault("deny_list.values", defaultConfig.DenyList.Values)
+	viper.SetDefault("metrics.enabled", defaultConfig.Metrics.Enabled)
+	viper.SetDefault("metrics.pprof", defaultConfig.Metrics.Pprof)
+	viper.SetDefault("metrics.host", defaultConfig.Metrics.Host)
+	viper.SetDefault("deny_routes.enabled", defaultConfig.DenyRoutes.Enabled)
+	viper.SetDefault("deny_routes.values", defaultConfig.DenyRoutes.Values)
+	viper.SetDefault("cors.enabled", defaultConfig.CORS.Enabled)
+	viper.SetDefault("gzip.enabled", defaultConfig.GZIP.Enabled)
+	viper.SetDefault("cg.percent", defaultConfig.GC.Percent)
 
 	// Unmarshal the configuration into the Config struct
 	var configFile ConfigFile
-	err = viper.Unmarshal(&configFile)
+	err := viper.Unmarshal(&configFile)
 	if err != nil {
 		log.Fatalf("Error unmarshaling config: %v", err)
 	}
 
-	url, err := url.Parse(configFile.TezosHost)
+	tezosHost := configFile.TezosHost
+	if !strings.Contains(configFile.TezosHost, "http") {
+		tezosHost = "http://" + configFile.TezosHost
+	}
+
+	url, err := url.ParseRequestURI(tezosHost)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -146,16 +217,23 @@ func NewConfig() *Config {
 
 	config := &Config{
 		ConfigFile: &configFile,
+		DenyListTable: func() map[string]bool {
+			table := make(map[string]bool)
+			for _, ip := range configFile.DenyList.Values {
+				table[ip] = true
+			}
+			return table
+		}(),
 		Rate: &limiter.Rate{
-			Period: time.Duration(GetEnvFloat("TZPROXY_RATE_LIMIT_MINUTES", 1.0)) * time.Minute,
-			Limit:  int64(configFile.RateLimitMax),
+			Period: time.Duration(configFile.RateLimit.Minutes) * time.Minute,
+			Limit:  int64(configFile.RateLimit.Max),
 		},
-		CacheStorage: freecache.NewCache(1024 * 1024 * configFile.CacheSizeMB),
-		CacheTTL:     time.Duration(configFile.CacheTTL) * (time.Second),
+		CacheStorage: freecache.NewCache(1024 * 1024 * configFile.Cache.SizeMB),
+		CacheTTL:     time.Duration(configFile.Cache.SizeMB) * (time.Second),
 		ProxyConfig:  &proxyConfig,
 	}
 
-	for _, route := range config.ConfigFile.BlockRoutes {
+	for _, route := range config.ConfigFile.DenyRoutes.Values {
 		regex, err := regexp.Compile(route)
 		if err != nil {
 			panic(err)
@@ -163,7 +241,7 @@ func NewConfig() *Config {
 		config.BlockRoutesRegex = append(config.BlockRoutesRegex, regex)
 	}
 
-	for _, route := range config.ConfigFile.CacheDisabledRoutes {
+	for _, route := range config.ConfigFile.Cache.DisabledRoutes {
 		regex, err := regexp.Compile(route)
 		if err != nil {
 			panic(err)
@@ -212,6 +290,9 @@ func NewConfig() *Config {
 			return nil
 		},
 	}
+
+	viper.SafeWriteConfig()
+	viper.WatchConfig()
 
 	return config
 }
