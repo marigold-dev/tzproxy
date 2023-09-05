@@ -30,7 +30,7 @@ gzip:
     enabled: true
 host: 0.0.0.0:8080
 logger:
-    bunch_size: 100
+    bunch_size: 1000
     pool_interval_seconds: 5
 metrics:
     enabled: true

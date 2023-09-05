@@ -95,8 +95,8 @@ var defaultConfig = &ConfigFile{
 	Host:      "0.0.0.0:8080",
 	TezosHost: "127.0.0.1:8732",
 	Logger: Logger{
-		BunchSize:           100,
-		PoolIntervalSeconds: 5,
+		BunchSize:           1000,
+		PoolIntervalSeconds: 10,
 	},
 	RateLimit: RateLimit{
 		Enabled: false,
@@ -249,10 +249,13 @@ func NewConfig() *Config {
 		config.CacheDisabledRoutesRegex = append(config.CacheDisabledRoutesRegex, regex)
 	}
 
-	wr := diode.NewWriter(os.Stdout, 1000, 1*time.Second, func(missed int) {
-		log.Printf("Logger Dropped %d messages", missed)
-	})
-	zl := zerolog.New(wr)
+	bunchWriter := diode.NewWriter(
+		os.Stdout,
+		config.ConfigFile.Logger.BunchSize,
+		time.Duration(configFile.Logger.PoolIntervalSeconds)*time.Second, func(missed int) {
+			log.Printf("Logger Dropped %d messages", missed)
+		})
+	zl := zerolog.New(bunchWriter)
 	config.RequestLoggerConfig = &middleware.RequestLoggerConfig{
 		LogLatency:      true,
 		LogProtocol:     true,
