@@ -12,7 +12,29 @@ TzProxy is a reverse proxy specifically designed for Tezos nodes, offering a ran
 - [x] GZIP
 - [x] Metrics
 
-## Congiguration
+## How to run
+
+Make sure that your Tezos Node is running and set its host address in the `tezos_host` configuration.
+
+If you want to test only TzProxy without a real Tezos Node, you can simulate a Tezos Node with our `flextesa.sh` script. Make sure that you have a docker.
+
+```bash
+./flextesa.sh
+```
+
+If you want custom configurations, create a file named as `tzproxy.yaml` in the same directory of the binary. This file will be created if you don't create it.
+
+Then, just [download the binary](https://github.com/marigold-dev/tzproxy/releases) and run it:
+```bash
+./tzproxy
+```
+
+Finally, test it with:
+```bash
+curl http://localhost:8080/chains/main/blocks/head/header
+```
+
+## Configuration
 
 ### Yaml File
 Here a default `tzproxy.yaml` file:
@@ -80,7 +102,7 @@ You can also configure or overwrite TzProxy with environment variables, using th
 - `TZPROXY_DENY_ROUTES_ENABLED` is a flag to block the Tezos node's routes. 
 - `TZPROXY_DENY_ROUTES_VALUES` is the Tezos nodes routes that will be blocked on the proxy.conf.
 - `TZPROXY_CACHE_ENABLED` is the flag to cache enable cache.
-- `TZPROXY_CACHE_DISABLED_ROUTES` is the routes to cache.
+- `TZPROXY_CACHE_DISABLED_ROUTES` is the variable with the routes to cache.
 - `TZPROXY_CACHE_SIZE_MB` is the size of the cache in megabytes.
 - `TZPROXY_CACHE_TTL` is the time to live in seconds for cache.
 - `TZPROXY_METRICS_ENABLED` is the flag to enable metrics.
@@ -89,3 +111,4 @@ You can also configure or overwrite TzProxy with environment variables, using th
 - `TZPROXY_GZIP_ENABLED` is the flag to enable gzip.
 - `TZPROXY_CORS_ENABLED` is the flag to enable cors.
 - `TZPROXY_GC_PERCENT` is the percent of the garbage collector.
+
