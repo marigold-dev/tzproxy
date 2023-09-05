@@ -24,8 +24,6 @@ cache:
     enabled: true
     size_mb: 100
     ttl: 5
-cg:
-    percent: 20
 cors:
     enabled: true
 deny_list:
@@ -46,12 +44,14 @@ deny_routes:
         - /helpers/baking_rights
         - /helpers/endorsing_rights
         - /chains/main/blocks/.*/context/contracts(/?)$
+gc:
+    percent: 20
 gzip:
     enabled: true
 host: 0.0.0.0:8080
 logger:
-    bunch_size: 100
-    pool_interval_seconds: 5
+    bunch_size: 1000
+    pool_interval_seconds: 10
 metrics:
     enabled: true
     host: 0.0.0.0:9000

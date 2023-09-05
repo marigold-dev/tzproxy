@@ -175,7 +175,7 @@ func NewConfig() *Config {
 	viper.SetDefault("deny_routes.values", defaultConfig.DenyRoutes.Values)
 	viper.SetDefault("cors.enabled", defaultConfig.CORS.Enabled)
 	viper.SetDefault("gzip.enabled", defaultConfig.GZIP.Enabled)
-	viper.SetDefault("cg.percent", defaultConfig.GC.Percent)
+	viper.SetDefault("gc.percent", defaultConfig.GC.Percent)
 
 	// Unmarshal the configuration into the Config struct
 	var configFile ConfigFile
