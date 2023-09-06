@@ -229,7 +229,7 @@ func NewConfig() *Config {
 			Limit:  int64(configFile.RateLimit.Max),
 		},
 		CacheStorage: freecache.NewCache(1024 * 1024 * configFile.Cache.SizeMB),
-		CacheTTL:     time.Duration(configFile.Cache.SizeMB) * (time.Second),
+		CacheTTL:     time.Duration(configFile.Cache.TTL) * (time.Second),
 		ProxyConfig:  &proxyConfig,
 	}
 
