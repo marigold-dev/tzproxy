@@ -267,6 +267,7 @@ func NewConfig() *Config {
 		LogError:        true,
 		HandleError:     true,
 		LogResponseSize: true,
+		LogReferer:      true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			if v.Error != nil {
 				zl.Error().
@@ -286,6 +287,7 @@ func NewConfig() *Config {
 					Str("uri", v.URI).
 					Int64("elapsed", int64(v.Latency)).
 					Str("user_agent", v.UserAgent).
+					Str("referer", v.Referer).
 					Int64("response_size", v.ResponseSize).
 					Msg("request")
 			}
