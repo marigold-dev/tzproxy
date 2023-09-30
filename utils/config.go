@@ -104,10 +104,14 @@ var defaultConfig = &ConfigFile{
 		Max:     300,
 	},
 	Cache: Cache{
-		Enabled:        true,
-		TTL:            5,
-		DisabledRoutes: []string{"/monitor/.*"},
-		SizeMB:         100,
+		Enabled: true,
+		TTL:     5,
+		DisabledRoutes: []string{
+			"/monitor/.*",
+			"/chains/.*/mempool",
+			"/chains/.*/blocks.*head",
+		},
+		SizeMB: 100,
 	},
 	DenyList: DenyList{
 		Enabled: false,
@@ -117,10 +121,11 @@ var defaultConfig = &ConfigFile{
 		Enabled: true,
 		Values: []string{
 			"/injection/block", "/injection/protocol", "/network.*", "/workers.*",
-			"/worker.*", "/stats.*", "/config", "/chains/main/blocks/.*/helpers/baking_rights",
-			"/chains/main/blocks/.*/helpers/endorsing_rights",
+			"/worker.*", "/stats.*", "/config", "/chains/.*/blocks/.*/helpers/baking_rights",
+			"/chains/.*/blocks/.*/helpers/endorsing_rights",
 			"/helpers/baking_rights", "/helpers/endorsing_rights",
-			"/chains/main/blocks/.*/context/contracts(/?)$",
+			"/chains/.*/blocks/.*/context/contracts(/?)$",
+			"/chains/.*/blocks/.*/context/raw/bytes",
 		},
 	},
 	Metrics: Metrics{

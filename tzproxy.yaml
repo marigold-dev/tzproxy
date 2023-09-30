@@ -1,6 +1,8 @@
 cache:
     disabled_routes:
         - /monitor/.*
+        - /chains/.*/mempool
+        - /chains/.*/blocks.*head
     enabled: true
     size_mb: 100
     ttl: 5
@@ -19,11 +21,12 @@ deny_routes:
         - /worker.*
         - /stats.*
         - /config
-        - /chains/main/blocks/.*/helpers/baking_rights
-        - /chains/main/blocks/.*/helpers/endorsing_rights
+        - /chains/.*/blocks/.*/helpers/baking_rights
+        - /chains/.*/blocks/.*/helpers/endorsing_rights
         - /helpers/baking_rights
         - /helpers/endorsing_rights
-        - /chains/main/blocks/.*/context/contracts(/?)$
+        - /chains/.*/blocks/.*/context/contracts(/?)$
+        - /chains/.*/blocks/.*/context/raw/bytes
 gc:
     percent: 20
 gzip:
