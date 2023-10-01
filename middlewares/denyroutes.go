@@ -19,7 +19,7 @@ func DenyRoutes(config *utils.Config) echo.MiddlewareFunc {
 
 			for _, regex := range config.BlockRoutesRegex {
 				if regex.MatchString(path) {
-					msg := fmt.Sprintf("You don't have accest %s route", path)
+					msg := fmt.Sprintf("You don't have access %s route", path)
 					return c.JSON(http.StatusForbidden, echo.Map{
 						"success": false,
 						"message": msg,
