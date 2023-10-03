@@ -78,22 +78,24 @@ type GZIP struct {
 }
 
 type ConfigFile struct {
-	Logger     Logger     `mapstructure:"logger"`
-	RateLimit  RateLimit  `mapstructure:"rate_limit"`
-	Cache      Cache      `mapstructure:"cache"`
-	DenyList   DenyList   `mapstructure:"deny_list"`
-	DenyRoutes DenyRoutes `mapstructure:"deny_routes"`
-	Metrics    Metrics    `mapstructure:"metrics"`
-	GC         GC         `mapstructure:"gc"`
-	CORS       CORS       `mapstructure:"cors"`
-	GZIP       GZIP       `mapstructure:"gzip"`
-	Host       string     `mapstructure:"host"`
-	TezosHost  string     `mapstructure:"tezos_host"`
+	Logger          Logger     `mapstructure:"logger"`
+	RateLimit       RateLimit  `mapstructure:"rate_limit"`
+	Cache           Cache      `mapstructure:"cache"`
+	DenyList        DenyList   `mapstructure:"deny_list"`
+	DenyRoutes      DenyRoutes `mapstructure:"deny_routes"`
+	Metrics         Metrics    `mapstructure:"metrics"`
+	GC              GC         `mapstructure:"gc"`
+	CORS            CORS       `mapstructure:"cors"`
+	GZIP            GZIP       `mapstructure:"gzip"`
+	Host            string     `mapstructure:"host"`
+	TezosHost       []string   `mapstructure:"tezos_host"`
+	LoadBalancerTTL int        `mapstructure:"tezos_host_load_balancer_ttl"`
 }
 
 var defaultConfig = &ConfigFile{
-	Host:      "0.0.0.0:8080",
-	TezosHost: "127.0.0.1:8732",
+	Host:            "0.0.0.0:8080",
+	TezosHost:       []string{"127.0.0.1:8732"},
+	LoadBalancerTTL: 600,
 	Logger: Logger{
 		BunchSize:           1000,
 		PoolIntervalSeconds: 10,
@@ -162,6 +164,7 @@ func NewConfig() *Config {
 	// Set default values for configuration
 	viper.SetDefault("host", defaultConfig.Host)
 	viper.SetDefault("tezos_host", defaultConfig.TezosHost)
+	viper.SetDefault("load_balancer_ttl", defaultConfig.LoadBalancerTTL)
 	viper.SetDefault("logger.bunch_size", defaultConfig.Logger.BunchSize)
 	viper.SetDefault("logger.pool_interval_seconds", defaultConfig.Logger.PoolIntervalSeconds)
 	viper.SetDefault("cache.enabled", defaultConfig.Cache.Enabled)
@@ -189,16 +192,22 @@ func NewConfig() *Config {
 		log.Fatalf("Error unmarshaling config: %v", err)
 	}
 
-	tezosHost := configFile.TezosHost
-	if !strings.Contains(configFile.TezosHost, "http") {
-		tezosHost = "http://" + configFile.TezosHost
-	}
+	var targets = []*middleware.ProxyTarget{}
 
-	url, err := url.ParseRequestURI(tezosHost)
-	if err != nil {
-		log.Fatal(err)
+	for _, host := range configFile.TezosHost {
+		tezosHost := host
+
+		if !strings.Contains(host, "http") {
+			tezosHost = "http://" + host
+		}
+
+		url, err := url.ParseRequestURI(tezosHost)
+		if err != nil {
+			log.Fatal(err)
+		}
+		targets = append(targets, &middleware.ProxyTarget{URL: url})
 	}
-	balancer := middleware.NewRoundRobinBalancer([]*middleware.ProxyTarget{{URL: url}})
+	balancer := NewSameNodeBalancer(targets, configFile.LoadBalancerTTL)
 
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,

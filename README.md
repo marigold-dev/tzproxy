@@ -43,6 +43,8 @@ Here a default `tzproxy.yaml` file:
 cache:
     disabled_routes:
         - /monitor/.*
+        - /chains/.*/mempool
+        - /chains/.*/blocks.*head
     enabled: true
     size_mb: 100
     ttl: 5
@@ -61,16 +63,18 @@ deny_routes:
         - /worker.*
         - /stats.*
         - /config
-        - /chains/main/blocks/.*/helpers/baking_rights
-        - /chains/main/blocks/.*/helpers/endorsing_rights
+        - /chains/.*/blocks/.*/helpers/baking_rights
+        - /chains/.*/blocks/.*/helpers/endorsing_rights
         - /helpers/baking_rights
         - /helpers/endorsing_rights
-        - /chains/main/blocks/.*/context/contracts(/?)$
+        - /chains/.*/blocks/.*/context/contracts(/?)$
+        - /chains/.*/blocks/.*/context/raw/bytes
 gc:
     percent: 20
 gzip:
     enabled: true
 host: 0.0.0.0:8080
+load_balancer_ttl: 600
 logger:
     bunch_size: 1000
     pool_interval_seconds: 10
@@ -82,7 +86,8 @@ rate_limit:
     enabled: false
     max: 300
     minutes: 1
-tezos_host: 127.0.0.1:8732
+tezos_host:
+    - 127.0.0.1:8732
 ```
 
 ### Environment Variables
@@ -91,7 +96,8 @@ You can also configure or overwrite TzProxy with environment variables, using th
 
 
 - `TZPROXY_HOST` is the host of the proxy.
-- `TZPROXY_TEZOS_HOST` is the host of the tezos node.
+- `TZPROXY_TEZOS_HOST` are the hosts of the tezos nodes.
+- `TZPROXY_LOAD_BALANCER_TTL` is the time to live to keep using the same node by user IP.
 - `TZPROXY_LOGGER_BUNCH_SIZE` is the bunch size of the logger.
 - `TZPROXY_LOGGER_POOL_INTERVAL_SECONDS` is the pool interval of the logger.
 - `TZPROXY_RATE_LIMIT_ENABLED` is a flag to enable rate limiting.

@@ -32,6 +32,7 @@ gc:
 gzip:
     enabled: true
 host: 0.0.0.0:8080
+load_balancer_ttl: 600
 logger:
     bunch_size: 1000
     pool_interval_seconds: 10
@@ -43,4 +44,5 @@ rate_limit:
     enabled: false
     max: 300
     minutes: 1
-tezos_host: 127.0.0.1:8732
+tezos_host:
+    - 127.0.0.1:8732
