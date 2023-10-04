@@ -4,6 +4,8 @@ cache:
         - /chains/.*/mempool
         - /chains/.*/blocks.*head
     enabled: true
+    enabled_routes:
+        /version: 60000
     size_mb: 100
     ttl: 5
 cors:

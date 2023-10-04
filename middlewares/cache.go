@@ -4,49 +4,86 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	cache "github.com/fraidev/go-echo-cache"
 	"github.com/labstack/echo/v4"
 	utils "github.com/marigold-dev/tzproxy/utils"
 )
 
-func Cache(config *utils.Config) echo.MiddlewareFunc {
-	return cache.New(&cache.Config{
-		TTL: config.CacheTTL,
-		Cache: func(r *http.Request) bool {
-			if !config.ConfigFile.Cache.Enabled || r.Method != http.MethodGet {
-				return false
-			}
+func Cache(config *utils.Config) []echo.MiddlewareFunc {
+	middlewares := make([]echo.MiddlewareFunc, len(config.CacheEnabledRoutesRegex))
 
-			for _, regex := range config.CacheDisabledRoutesRegex {
-				if regex.MatchString(r.URL.Path) {
+	if len(config.CacheEnabledRoutesRegex) == 0 {
+		middleware := cache.New(&cache.Config{
+			TTL: config.CacheTTL,
+			Cache: func(r *http.Request) bool {
+				if !config.ConfigFile.Cache.Enabled || r.Method != http.MethodGet {
 					return false
 				}
-			}
-			return true
-		},
-		GetKey: func(r *http.Request) []byte {
-			base := r.Method + "|" + r.URL.Path
-			base += "|" + r.URL.Query().Encode()
 
-			gzip := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
+				for _, regexDisabled := range config.CacheDisabledRoutesRegex {
+					if regexDisabled.MatchString(r.URL.Path) {
+						return false
+					}
+				}
 
-			acceptHeader := r.Header.Get("Accept")
-			if mediaIsUsed(acceptHeader, "application/bson") {
-				base += "|" + "bson"
-			} else if mediaIsUsed(acceptHeader, "application/octet-stream") {
-				base += "|" + "octet"
-			} else {
-				base += "|" + "json"
-			}
+				return false
+			},
+			GetKey: getKey,
+		}, config.CacheStorage)
+		middlewares = append(middlewares, middleware)
+		return middlewares
+	}
 
-			if gzip {
-				base += "|" + "gzip"
-			}
+	for regexEnabled, ttl := range config.CacheEnabledRoutesRegex {
+		middleware := cache.New(&cache.Config{
+			TTL: time.Duration(ttl) * time.Second,
+			Cache: func(r *http.Request) bool {
+				if !config.ConfigFile.Cache.Enabled || r.Method != http.MethodGet {
+					return false
+				}
 
-			return []byte(base)
-		},
-	}, config.CacheStorage)
+				for _, regexDisabled := range config.CacheDisabledRoutesRegex {
+					if regexDisabled.MatchString(r.URL.Path) {
+						return false
+					}
+				}
+
+				if regexEnabled.MatchString(r.URL.Path) {
+					return true
+				}
+
+				return false
+			},
+			GetKey: getKey,
+		}, config.CacheStorage)
+		middlewares = append(middlewares, middleware)
+	}
+
+	return middlewares
+}
+
+func getKey(r *http.Request) []byte {
+	base := r.Method + "|" + r.URL.Path
+	base += "|" + r.URL.Query().Encode()
+
+	gzip := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
+
+	acceptHeader := r.Header.Get("Accept")
+	if mediaIsUsed(acceptHeader, "application/bson") {
+		base += "|" + "bson"
+	} else if mediaIsUsed(acceptHeader, "application/octet-stream") {
+		base += "|" + "octet"
+	} else {
+		base += "|" + "json"
+	}
+
+	if gzip {
+		base += "|" + "gzip"
+	}
+
+	return []byte(base)
 }
 
 func mediaIsUsed(acceptHeader, media string) bool {

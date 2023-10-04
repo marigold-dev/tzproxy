@@ -24,6 +24,7 @@ type Config struct {
 	DenyListTable            map[string]bool
 	Rate                     *limiter.Rate
 	CacheDisabledRoutesRegex []*regexp.Regexp
+	CacheEnabledRoutesRegex  map[*regexp.Regexp]int
 	BlockRoutesRegex         []*regexp.Regexp
 	CacheStorage             *freecache.Cache
 	CacheTTL                 time.Duration
@@ -43,10 +44,11 @@ type RateLimit struct {
 }
 
 type Cache struct {
-	Enabled        bool     `mapstructure:"enabled"`
-	TTL            int      `mapstructure:"ttl"`
-	DisabledRoutes []string `mapstructure:"disabled_routes"`
-	SizeMB         int      `mapstructure:"size_mb"`
+	Enabled        bool           `mapstructure:"enabled"`
+	TTL            int            `mapstructure:"ttl"`
+	DisabledRoutes []string       `mapstructure:"disabled_routes"`
+	EnabledRoutes  map[string]int `mapstructure:"enabled_routes"`
+	SizeMB         int            `mapstructure:"size_mb"`
 }
 
 type DenyList struct {
@@ -113,6 +115,9 @@ var defaultConfig = &ConfigFile{
 			"/chains/.*/mempool",
 			"/chains/.*/blocks.*head",
 		},
+		EnabledRoutes: map[string]int{
+			"/version": 60000,
+		},
 		SizeMB: 100,
 	},
 	DenyList: DenyList{
@@ -170,6 +175,7 @@ func NewConfig() *Config {
 	viper.SetDefault("cache.enabled", defaultConfig.Cache.Enabled)
 	viper.SetDefault("cache.ttl", defaultConfig.Cache.TTL)
 	viper.SetDefault("cache.disabled_routes", defaultConfig.Cache.DisabledRoutes)
+	viper.SetDefault("cache.enabled_routes", defaultConfig.Cache.EnabledRoutes)
 	viper.SetDefault("cache.size_mb", defaultConfig.Cache.SizeMB)
 	viper.SetDefault("rate_limit.enabled", defaultConfig.RateLimit.Enabled)
 	viper.SetDefault("rate_limit.minutes", defaultConfig.RateLimit.Minutes)
@@ -261,6 +267,17 @@ func NewConfig() *Config {
 			panic(err)
 		}
 		config.CacheDisabledRoutesRegex = append(config.CacheDisabledRoutesRegex, regex)
+	}
+
+	for route, ttl := range config.ConfigFile.Cache.EnabledRoutes {
+		regex, err := regexp.Compile(route)
+		if err != nil {
+			panic(err)
+		}
+		if config.CacheEnabledRoutesRegex == nil {
+			config.CacheEnabledRoutesRegex = make(map[*regexp.Regexp]int)
+		}
+		config.CacheEnabledRoutesRegex[regex] = ttl
 	}
 
 	bunchWriter := diode.NewWriter(

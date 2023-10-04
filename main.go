@@ -35,7 +35,9 @@ func main() {
 	e.Use(middlewares.CORS(config))
 	e.Use(middlewares.RateLimit(config))
 	e.Use(middlewares.DenyRoutes(config))
-	e.Use(middlewares.Cache(config))
+	for _, CacheMiddleware := range middlewares.Cache(config) {
+		e.Use(CacheMiddleware)
+	}
 	e.Use(middlewares.Gzip(config))
 	e.Use(middleware.ProxyWithConfig(*config.ProxyConfig))
 
