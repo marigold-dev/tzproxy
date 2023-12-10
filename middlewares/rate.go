@@ -10,10 +10,6 @@ import (
 	"github.com/ulule/limiter/v3/drivers/store/memory"
 )
 
-var (
-	store limiter.Store
-)
-
 func RateLimit(config *utils.Config) echo.MiddlewareFunc {
 	store := memory.NewStore()
 	ipRateLimiter := limiter.New(store, *config.Rate)
