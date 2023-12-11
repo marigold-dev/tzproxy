@@ -66,7 +66,7 @@ func (b *sameNodeBalancer) Next(c echo.Context) *middleware.ProxyTarget {
 	got, err := b.store.Get(c.Request().Context(), ipKey)
 	if err != nil {
 		i = b.random.Intn(len(b.targets))
-		b.store.Set(c.Request().Context(), ipKey, []byte{byte(i)}, 10)
+		b.store.Set(c.Request().Context(), ipKey, []byte{byte(i)}, b.TTL)
 	} else {
 		i = int(got[0])
 	}

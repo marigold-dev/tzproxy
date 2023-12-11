@@ -88,20 +88,24 @@ type Redis struct {
 	Enabled bool   `mapstructure:"enabled"`
 }
 
+type LoadBalancer struct {
+	TTL int `mapstructure:"ttl"`
+}
+
 type ConfigFile struct {
-	Redis           Redis      `mapstructure:"redis"`
-	Logger          Logger     `mapstructure:"logger"`
-	RateLimit       RateLimit  `mapstructure:"rate_limit"`
-	Cache           Cache      `mapstructure:"cache"`
-	DenyList        DenyList   `mapstructure:"deny_list"`
-	DenyRoutes      DenyRoutes `mapstructure:"deny_routes"`
-	Metrics         Metrics    `mapstructure:"metrics"`
-	GC              GC         `mapstructure:"gc"`
-	CORS            CORS       `mapstructure:"cors"`
-	GZIP            GZIP       `mapstructure:"gzip"`
-	Host            string     `mapstructure:"host"`
-	TezosHost       []string   `mapstructure:"tezos_host"`
-	LoadBalancerTTL int        `mapstructure:"tezos_host_load_balancer_ttl"`
+	LoadBalancer LoadBalancer `mapstructure:"load_balancer"`
+	Redis        Redis        `mapstructure:"redis"`
+	Logger       Logger       `mapstructure:"logger"`
+	RateLimit    RateLimit    `mapstructure:"rate_limit"`
+	Cache        Cache        `mapstructure:"cache"`
+	DenyList     DenyList     `mapstructure:"deny_list"`
+	DenyRoutes   DenyRoutes   `mapstructure:"deny_routes"`
+	Metrics      Metrics      `mapstructure:"metrics"`
+	GC           GC           `mapstructure:"gc"`
+	CORS         CORS         `mapstructure:"cors"`
+	GZIP         GZIP         `mapstructure:"gzip"`
+	Host         string       `mapstructure:"host"`
+	TezosHost    []string     `mapstructure:"tezos_host"`
 }
 
 var defaultConfig = &ConfigFile{
@@ -111,7 +115,9 @@ var defaultConfig = &ConfigFile{
 		Host:    "",
 		Enabled: false,
 	},
-	LoadBalancerTTL: 600,
+	LoadBalancer: LoadBalancer{
+		TTL: 600,
+	},
 	Logger: Logger{
 		BunchSize:           1000,
 		PoolIntervalSeconds: 10,
@@ -183,7 +189,7 @@ func NewConfig() *Config {
 	viper.SetDefault("tezos_host", defaultConfig.TezosHost)
 	viper.SetDefault("redis.host", defaultConfig.Redis.Host)
 	viper.SetDefault("redis.enabled", defaultConfig.Redis.Enabled)
-	viper.SetDefault("load_balancer_ttl", defaultConfig.LoadBalancerTTL)
+	viper.SetDefault("load_balancer.ttl", defaultConfig.LoadBalancer.TTL)
 	viper.SetDefault("logger.bunch_size", defaultConfig.Logger.BunchSize)
 	viper.SetDefault("logger.pool_interval_seconds", defaultConfig.Logger.PoolIntervalSeconds)
 	viper.SetDefault("cache.enabled", defaultConfig.Cache.Enabled)
@@ -253,7 +259,7 @@ func NewConfig() *Config {
 		store = &memoryStore
 	}
 
-	balancer := NewSameNodeBalancer(targets, configFile.LoadBalancerTTL, store)
+	balancer := NewSameNodeBalancer(targets, configFile.LoadBalancer.TTL, store)
 
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,

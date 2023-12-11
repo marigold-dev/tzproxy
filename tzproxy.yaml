@@ -33,7 +33,8 @@ gc:
 gzip:
     enabled: true
 host: 0.0.0.0:8080
-load_balancer_ttl: 600
+load_balancer:
+    ttl: 600
 logger:
     bunch_size: 1000
     pool_interval_seconds: 10
