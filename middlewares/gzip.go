@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	utils "github.com/marigold-dev/tzproxy/utils"
+	"github.com/marigold-dev/tzproxy/utils"
 )
 
 func Gzip(config *utils.Config) echo.MiddlewareFunc {

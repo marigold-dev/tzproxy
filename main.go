@@ -13,16 +13,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/marigold-dev/tzproxy/middlewares"
-	utils "github.com/marigold-dev/tzproxy/utils"
+	"github.com/marigold-dev/tzproxy/utils"
 )
 
 func main() {
 	config := utils.NewConfig()
 
-	// As we allocate a lot of memory with cache,
-	// we need to set a low GC percent to avoid long GC pauses
-	// the default value is 20,
-	// which means that the GC will run when the allocated memory reaches 20% of the used memory
 	debug.SetGCPercent(config.ConfigFile.GC.Percent)
 
 	e := echo.New()

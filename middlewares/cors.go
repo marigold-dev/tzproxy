@@ -3,7 +3,7 @@ package middlewares
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	utils "github.com/marigold-dev/tzproxy/utils"
+	"github.com/marigold-dev/tzproxy/utils"
 )
 
 func CORS(config *utils.Config) echo.MiddlewareFunc {

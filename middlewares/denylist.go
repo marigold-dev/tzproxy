@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	utils "github.com/marigold-dev/tzproxy/utils"
+	"github.com/marigold-dev/tzproxy/utils"
 )
 
 func Denylist(config *utils.Config) echo.MiddlewareFunc {

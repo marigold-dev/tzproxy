@@ -1,4 +1,4 @@
-package util
+package utils
 
 import (
 	"log"
@@ -11,8 +11,10 @@ import (
 	"time"
 
 	"github.com/coocood/freecache"
+	echocache "github.com/fraidev/go-echo-cache"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/diode"
 	"github.com/spf13/viper"
@@ -20,15 +22,18 @@ import (
 )
 
 type Config struct {
+	Level                    uint
+	HashBlock                string
 	ConfigFile               *ConfigFile
 	DenyListTable            map[string]bool
 	Rate                     *limiter.Rate
 	CacheDisabledRoutesRegex []*regexp.Regexp
 	BlockRoutesRegex         []*regexp.Regexp
-	CacheStorage             *freecache.Cache
+	Store                    echocache.Cache
 	CacheTTL                 time.Duration
 	RequestLoggerConfig      *middleware.RequestLoggerConfig
 	ProxyConfig              *middleware.ProxyConfig
+	Redis                    *redis.Client
 }
 
 type Logger struct {
@@ -66,7 +71,8 @@ type Metrics struct {
 }
 
 type GC struct {
-	Percent int `mapstructure:"percent"`
+	OptimizeMemoryStore bool `mapstructure:"optimize_memory_store"`
+	Percent             int  `mapstructure:"percent"`
 }
 
 type CORS struct {
@@ -77,7 +83,13 @@ type GZIP struct {
 	Enabled bool `mapstructure:"enabled"`
 }
 
+type Redis struct {
+	Host    string `mapstructure:"host"`
+	Enabled bool   `mapstructure:"enabled"`
+}
+
 type ConfigFile struct {
+	Redis           Redis      `mapstructure:"redis"`
 	Logger          Logger     `mapstructure:"logger"`
 	RateLimit       RateLimit  `mapstructure:"rate_limit"`
 	Cache           Cache      `mapstructure:"cache"`
@@ -93,8 +105,12 @@ type ConfigFile struct {
 }
 
 var defaultConfig = &ConfigFile{
-	Host:            "0.0.0.0:8080",
-	TezosHost:       []string{"127.0.0.1:8732"},
+	Host:      "0.0.0.0:8080",
+	TezosHost: []string{"127.0.0.1:8732"},
+	Redis: Redis{
+		Host:    "",
+		Enabled: false,
+	},
 	LoadBalancerTTL: 600,
 	Logger: Logger{
 		BunchSize:           1000,
@@ -136,7 +152,8 @@ var defaultConfig = &ConfigFile{
 		Pprof:   false,
 	},
 	GC: GC{
-		Percent: 20,
+		OptimizeMemoryStore: true,
+		Percent:             100,
 	},
 	GZIP: GZIP{
 		Enabled: true,
@@ -164,6 +181,8 @@ func NewConfig() *Config {
 	// Set default values for configuration
 	viper.SetDefault("host", defaultConfig.Host)
 	viper.SetDefault("tezos_host", defaultConfig.TezosHost)
+	viper.SetDefault("redis.host", defaultConfig.Redis.Host)
+	viper.SetDefault("redis.enabled", defaultConfig.Redis.Enabled)
 	viper.SetDefault("load_balancer_ttl", defaultConfig.LoadBalancerTTL)
 	viper.SetDefault("logger.bunch_size", defaultConfig.Logger.BunchSize)
 	viper.SetDefault("logger.pool_interval_seconds", defaultConfig.Logger.PoolIntervalSeconds)
@@ -176,13 +195,14 @@ func NewConfig() *Config {
 	viper.SetDefault("rate_limit.max", defaultConfig.RateLimit.Max)
 	viper.SetDefault("deny_list.enabled", defaultConfig.DenyList.Enabled)
 	viper.SetDefault("deny_list.values", defaultConfig.DenyList.Values)
+	viper.SetDefault("deny_routes.enabled", defaultConfig.DenyRoutes.Enabled)
+	viper.SetDefault("deny_routes.values", defaultConfig.DenyRoutes.Values)
 	viper.SetDefault("metrics.enabled", defaultConfig.Metrics.Enabled)
 	viper.SetDefault("metrics.pprof", defaultConfig.Metrics.Pprof)
 	viper.SetDefault("metrics.host", defaultConfig.Metrics.Host)
-	viper.SetDefault("deny_routes.enabled", defaultConfig.DenyRoutes.Enabled)
-	viper.SetDefault("deny_routes.values", defaultConfig.DenyRoutes.Values)
 	viper.SetDefault("cors.enabled", defaultConfig.CORS.Enabled)
 	viper.SetDefault("gzip.enabled", defaultConfig.GZIP.Enabled)
+	viper.SetDefault("gc.optimize_memory_store", defaultConfig.GC.OptimizeMemoryStore)
 	viper.SetDefault("gc.percent", defaultConfig.GC.Percent)
 
 	// Unmarshal the configuration into the Config struct
@@ -190,6 +210,14 @@ func NewConfig() *Config {
 	err := viper.Unmarshal(&configFile)
 	if err != nil {
 		log.Fatalf("Error unmarshaling config: %v", err)
+	}
+	viper.SafeWriteConfig()
+	viper.WatchConfig()
+
+	if configFile.GC.OptimizeMemoryStore {
+		if configFile.Redis.Enabled {
+			configFile.GC.Percent = 20
+		}
 	}
 
 	var targets = []*middleware.ProxyTarget{}
@@ -207,7 +235,25 @@ func NewConfig() *Config {
 		}
 		targets = append(targets, &middleware.ProxyTarget{URL: url})
 	}
-	balancer := NewSameNodeBalancer(targets, configFile.LoadBalancerTTL)
+
+	var redisClient *redis.Client
+	if configFile.Redis.Enabled {
+		redisClient = redis.NewClient(&redis.Options{
+			Addr: configFile.Redis.Host,
+		})
+	}
+
+	var store echocache.Cache
+	if configFile.Redis.Enabled {
+		redisStore := echocache.NewRedisCache(redisClient)
+		store = &redisStore
+	} else {
+		freeCache := freecache.NewCache(configFile.Cache.SizeMB * 1024 * 1024)
+		memoryStore := echocache.NewMemoryCache(freeCache)
+		store = &memoryStore
+	}
+
+	balancer := NewSameNodeBalancer(targets, configFile.LoadBalancerTTL, store)
 
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -242,9 +288,10 @@ func NewConfig() *Config {
 			Period: time.Duration(configFile.RateLimit.Minutes) * time.Minute,
 			Limit:  int64(configFile.RateLimit.Max),
 		},
-		CacheStorage: freecache.NewCache(1024 * 1024 * configFile.Cache.SizeMB),
-		CacheTTL:     time.Duration(configFile.Cache.TTL) * (time.Second),
-		ProxyConfig:  &proxyConfig,
+		Store:       store,
+		CacheTTL:    time.Duration(configFile.Cache.TTL) * (time.Second),
+		ProxyConfig: &proxyConfig,
+		Redis:       redisClient,
 	}
 
 	for _, route := range config.ConfigFile.DenyRoutes.Values {
@@ -309,9 +356,6 @@ func NewConfig() *Config {
 			return nil
 		},
 	}
-
-	viper.SafeWriteConfig()
-	viper.WatchConfig()
 
 	return config
 }

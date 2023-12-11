@@ -1,17 +1,29 @@
 package middlewares
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	utils "github.com/marigold-dev/tzproxy/utils"
+	"github.com/marigold-dev/tzproxy/utils"
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
+	"github.com/ulule/limiter/v3/drivers/store/redis"
 )
 
 func RateLimit(config *utils.Config) echo.MiddlewareFunc {
-	store := memory.NewStore()
+	var store limiter.Store
+	if config.ConfigFile.Redis.Enabled {
+		var err error
+		store, err = redis.NewStore(config.Redis)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		store = memory.NewStore()
+	}
+
 	ipRateLimiter := limiter.New(store, *config.Rate)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {

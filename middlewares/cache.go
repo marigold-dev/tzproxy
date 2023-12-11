@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"strings"
 
-	cache "github.com/fraidev/go-echo-cache"
+	echocache "github.com/fraidev/go-echo-cache"
 	"github.com/labstack/echo/v4"
-	utils "github.com/marigold-dev/tzproxy/utils"
+	"github.com/marigold-dev/tzproxy/utils"
 )
 
 func Cache(config *utils.Config) echo.MiddlewareFunc {
-	return cache.New(&cache.Config{
+	return echocache.New(&echocache.Config{
 		TTL: config.CacheTTL,
 		Cache: func(r *http.Request) bool {
 			if !config.ConfigFile.Cache.Enabled || r.Method != http.MethodGet {
@@ -23,30 +23,30 @@ func Cache(config *utils.Config) echo.MiddlewareFunc {
 					return false
 				}
 			}
+
 			return true
 		},
 		GetKey: func(r *http.Request) []byte {
-			base := r.Method + "|" + r.URL.Path
-			base += "|" + r.URL.Query().Encode()
+			base := r.Method + "|" + r.URL.Path + "|" + r.URL.Query().Encode()
 
 			gzip := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
 
 			acceptHeader := r.Header.Get("Accept")
 			if mediaIsUsed(acceptHeader, "application/bson") {
-				base += "|" + "bson"
+				base += "|bson"
 			} else if mediaIsUsed(acceptHeader, "application/octet-stream") {
-				base += "|" + "octet"
+				base += "|octet"
 			} else {
-				base += "|" + "json"
+				base += "|json"
 			}
 
 			if gzip {
-				base += "|" + "gzip"
+				base += "|gzip"
 			}
 
 			return []byte(base)
 		},
-	}, config.CacheStorage)
+	}, config.Store)
 }
 
 func mediaIsUsed(acceptHeader, media string) bool {

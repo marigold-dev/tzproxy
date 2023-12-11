@@ -1,11 +1,11 @@
-package util
+package utils
 
 import (
 	"math/rand"
 	"sync"
 	"time"
 
-	"github.com/coocood/freecache"
+	echocache "github.com/fraidev/go-echo-cache"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -14,15 +14,15 @@ type sameNodeBalancer struct {
 	targets []*middleware.ProxyTarget
 	mutex   sync.Mutex
 	random  *rand.Rand
-	store   freecache.Cache
+	store   echocache.Cache
 	TTL     int
 }
 
-func NewSameNodeBalancer(targets []*middleware.ProxyTarget, ttl int) middleware.ProxyBalancer {
+func NewSameNodeBalancer(targets []*middleware.ProxyTarget, ttl int, store echocache.Cache) middleware.ProxyBalancer {
 	b := sameNodeBalancer{}
 	b.targets = targets
 	b.random = rand.New(rand.NewSource(int64(time.Now().Nanosecond())))
-	b.store = *freecache.NewCache(1024 * 1024 * 1)
+	b.store = store
 	b.TTL = ttl
 	return &b
 }
@@ -63,10 +63,10 @@ func (b *sameNodeBalancer) Next(c echo.Context) *middleware.ProxyTarget {
 	var i int
 	ipKey := []byte(c.RealIP())
 
-	got, err := b.store.Get(ipKey)
+	got, err := b.store.Get(c.Request().Context(), ipKey)
 	if err != nil {
 		i = b.random.Intn(len(b.targets))
-		b.store.Set(ipKey, []byte{byte(i)}, 10)
+		b.store.Set(c.Request().Context(), ipKey, []byte{byte(i)}, 10)
 	} else {
 		i = int(got[0])
 	}

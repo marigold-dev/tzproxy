@@ -28,7 +28,8 @@ deny_routes:
         - /chains/.*/blocks/.*/context/contracts(/?)$
         - /chains/.*/blocks/.*/context/raw/bytes
 gc:
-    percent: 20
+    optimize_memory_store: true
+    percent: 100
 gzip:
     enabled: true
 host: 0.0.0.0:8080
@@ -44,5 +45,8 @@ rate_limit:
     enabled: false
     max: 300
     minutes: 1
+redis:
+    enabled: false
+    host: ""
 tezos_host:
     - 127.0.0.1:8732
