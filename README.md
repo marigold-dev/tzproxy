@@ -104,6 +104,7 @@ You can also configure or overwrite TzProxy with environment variables, using th
 
 - `TZPROXY_HOST` is the host of the proxy.
 - `TZPROXY_TEZOS_HOST` are the hosts of the tezos nodes.
+- `TZPROXY_TEZOS_HOST_RETRY` is the host used when finding a 404 or 410. It's recommended use full or archive nodes.
 - `TZPROXY_REDIS_HOST` is the host of the redis.
 - `TZPROXY_REDIS_ENABLE` is a flag to enable redis.
 - `TZPROXY_LOAD_BALANCER_TTL` is the time to live to keep using the same node by user IP.

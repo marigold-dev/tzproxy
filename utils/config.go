@@ -93,24 +93,26 @@ type LoadBalancer struct {
 }
 
 type ConfigFile struct {
-	LoadBalancer LoadBalancer `mapstructure:"load_balancer"`
-	Redis        Redis        `mapstructure:"redis"`
-	Logger       Logger       `mapstructure:"logger"`
-	RateLimit    RateLimit    `mapstructure:"rate_limit"`
-	Cache        Cache        `mapstructure:"cache"`
-	DenyList     DenyList     `mapstructure:"deny_list"`
-	DenyRoutes   DenyRoutes   `mapstructure:"deny_routes"`
-	Metrics      Metrics      `mapstructure:"metrics"`
-	GC           GC           `mapstructure:"gc"`
-	CORS         CORS         `mapstructure:"cors"`
-	GZIP         GZIP         `mapstructure:"gzip"`
-	Host         string       `mapstructure:"host"`
-	TezosHost    []string     `mapstructure:"tezos_host"`
+	LoadBalancer   LoadBalancer `mapstructure:"load_balancer"`
+	Redis          Redis        `mapstructure:"redis"`
+	Logger         Logger       `mapstructure:"logger"`
+	RateLimit      RateLimit    `mapstructure:"rate_limit"`
+	Cache          Cache        `mapstructure:"cache"`
+	DenyList       DenyList     `mapstructure:"deny_list"`
+	DenyRoutes     DenyRoutes   `mapstructure:"deny_routes"`
+	Metrics        Metrics      `mapstructure:"metrics"`
+	GC             GC           `mapstructure:"gc"`
+	CORS           CORS         `mapstructure:"cors"`
+	GZIP           GZIP         `mapstructure:"gzip"`
+	Host           string       `mapstructure:"host"`
+	TezosHost      []string     `mapstructure:"tezos_host"`
+	TezosHostRetry string       `mapstructure:"tezos_host_retry"`
 }
 
 var defaultConfig = &ConfigFile{
-	Host:      "0.0.0.0:8080",
-	TezosHost: []string{"127.0.0.1:8732"},
+	Host:           "0.0.0.0:8080",
+	TezosHost:      []string{"127.0.0.1:8732"},
+	TezosHostRetry: "",
 	Redis: Redis{
 		Host:    "",
 		Enabled: false,
@@ -187,6 +189,7 @@ func NewConfig() *Config {
 	// Set default values for configuration
 	viper.SetDefault("host", defaultConfig.Host)
 	viper.SetDefault("tezos_host", defaultConfig.TezosHost)
+	viper.SetDefault("tezos_host_retry", defaultConfig.TezosHostRetry)
 	viper.SetDefault("redis.host", defaultConfig.Redis.Host)
 	viper.SetDefault("redis.enabled", defaultConfig.Redis.Enabled)
 	viper.SetDefault("load_balancer.ttl", defaultConfig.LoadBalancer.TTL)
@@ -227,19 +230,12 @@ func NewConfig() *Config {
 	}
 
 	var targets = []*middleware.ProxyTarget{}
-
+	var retryTarget *middleware.ProxyTarget = nil
+	if configFile.TezosHostRetry != "" {
+		retryTarget = hostToTarget(configFile.TezosHostRetry)
+	}
 	for _, host := range configFile.TezosHost {
-		tezosHost := host
-
-		if !strings.Contains(host, "http") {
-			tezosHost = "http://" + host
-		}
-
-		url, err := url.ParseRequestURI(tezosHost)
-		if err != nil {
-			log.Fatal(err)
-		}
-		targets = append(targets, &middleware.ProxyTarget{URL: url})
+		targets = append(targets, hostToTarget(host))
 	}
 
 	var redisClient *redis.Client
@@ -259,7 +255,7 @@ func NewConfig() *Config {
 		store = &memoryStore
 	}
 
-	balancer := NewSameNodeBalancer(targets, configFile.LoadBalancer.TTL, store)
+	balancer := NewSameNodeBalancer(targets, retryTarget, configFile.LoadBalancer.TTL, store)
 
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -277,6 +273,7 @@ func NewConfig() *Config {
 	proxyConfig := middleware.ProxyConfig{
 		Skipper:    middleware.DefaultSkipper,
 		ContextKey: "target",
+		RetryCount: 2,
 		Balancer:   balancer,
 		Transport:  transport,
 	}
@@ -364,4 +361,17 @@ func NewConfig() *Config {
 	}
 
 	return config
+}
+
+func hostToTarget(host string) *middleware.ProxyTarget {
+	hostWithScheme := host
+	if !strings.Contains(host, "http") {
+		hostWithScheme = "http://" + host
+	}
+	targetURL, err := url.ParseRequestURI(hostWithScheme)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return &middleware.ProxyTarget{URL: targetURL}
 }

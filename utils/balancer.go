@@ -8,19 +8,22 @@ import (
 	echocache "github.com/fraidev/go-echo-cache"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/rs/zerolog/log"
 )
 
 type sameNodeBalancer struct {
-	targets []*middleware.ProxyTarget
-	mutex   sync.Mutex
-	random  *rand.Rand
-	store   echocache.Cache
-	TTL     int
+	targets     []*middleware.ProxyTarget
+	retryTarget *middleware.ProxyTarget
+	mutex       sync.Mutex
+	random      *rand.Rand
+	store       echocache.Cache
+	TTL         int
 }
 
-func NewSameNodeBalancer(targets []*middleware.ProxyTarget, ttl int, store echocache.Cache) middleware.ProxyBalancer {
+func NewSameNodeBalancer(targets []*middleware.ProxyTarget, retryTarget *middleware.ProxyTarget, ttl int, store echocache.Cache) middleware.ProxyBalancer {
 	b := sameNodeBalancer{}
 	b.targets = targets
+	b.retryTarget = retryTarget
 	b.random = rand.New(rand.NewSource(int64(time.Now().Nanosecond())))
 	b.store = store
 	b.TTL = ttl
@@ -54,6 +57,12 @@ func (b *sameNodeBalancer) RemoveTarget(name string) bool {
 func (b *sameNodeBalancer) Next(c echo.Context) *middleware.ProxyTarget {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
+
+	if b.retryTarget != nil && c.Get("retry") != nil {
+		log.Info().Msg("Retrying request")
+		return b.retryTarget
+	}
+
 	if len(b.targets) == 0 {
 		return nil
 	} else if len(b.targets) == 1 {

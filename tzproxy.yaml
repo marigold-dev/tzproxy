@@ -51,3 +51,4 @@ redis:
     host: ""
 tezos_host:
     - 127.0.0.1:8732
+tezos_host_retry: ""
