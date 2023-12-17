@@ -224,7 +224,7 @@ func NewConfig() *Config {
 	viper.WatchConfig()
 
 	if configFile.GC.OptimizeMemoryStore {
-		if configFile.Redis.Enabled {
+		if !configFile.Redis.Enabled {
 			configFile.GC.Percent = 20
 		}
 	}

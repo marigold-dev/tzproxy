@@ -8,7 +8,6 @@ import (
 	echocache "github.com/fraidev/go-echo-cache"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/rs/zerolog/log"
 )
 
 type sameNodeBalancer struct {
@@ -59,7 +58,6 @@ func (b *sameNodeBalancer) Next(c echo.Context) *middleware.ProxyTarget {
 	defer b.mutex.Unlock()
 
 	if b.retryTarget != nil && c.Get("retry") != nil {
-		log.Info().Msg("Retrying request")
 		return b.retryTarget
 	}
 
