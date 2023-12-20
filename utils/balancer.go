@@ -57,7 +57,7 @@ func (b *sameNodeBalancer) Next(c echo.Context) *middleware.ProxyTarget {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	if b.retryTarget != nil && c.Get("retry") != nil {
+	if b.retryTarget != nil && c.Get("retry") != nil && c.Get("retry").(bool) {
 		return b.retryTarget
 	}
 
@@ -67,16 +67,14 @@ func (b *sameNodeBalancer) Next(c echo.Context) *middleware.ProxyTarget {
 		return b.targets[0]
 	}
 
-	var i int
-	ipKey := []byte(c.RealIP())
-
-	got, err := b.store.Get(c.Request().Context(), ipKey)
+	ctx := c.Request().Context()
+	ip := []byte(c.RealIP())
+	got, err := b.store.Get(ctx, ip)
 	if err != nil {
-		i = b.random.Intn(len(b.targets))
-		b.store.Set(c.Request().Context(), ipKey, []byte{byte(i)}, b.TTL)
-	} else {
-		i = int(got[0])
+		i := b.random.Intn(len(b.targets))
+		b.store.Set(ctx, ip, []byte{byte(i)}, b.TTL)
+		return b.targets[i]
 	}
 
-	return b.targets[i]
+	return b.targets[int(got[0])]
 }
