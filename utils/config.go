@@ -256,7 +256,7 @@ func NewConfig() *Config {
 		store = &memoryStore
 	}
 
-	balancer := balancers.NewSameNodeBalancer(targets, retryTarget, configFile.LoadBalancer.TTL, store)
+	balancer := balancers.NewIPHashBalancer(targets, retryTarget, configFile.LoadBalancer.TTL, store)
 
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,

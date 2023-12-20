@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -15,15 +16,13 @@ func Retry(config *utils.Config) echo.MiddlewareFunc {
 			}
 			err = next(c)
 
-			status := c.Response().Status
-			if status == 404 || status == 410 &&
-				strings.Contains(c.Request().URL.Path, "blocks") {
+			status := strconv.Itoa(c.Response().Status)
+			if !strings.HasPrefix(status, "2") {
 				c.Set("retry", true)
 				return next(c)
-			} else {
-				c.Set("retry", false)
 			}
 
+			c.Set("retry", false)
 			return err
 		}
 	}
