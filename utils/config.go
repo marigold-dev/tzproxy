@@ -14,6 +14,7 @@ import (
 	echocache "github.com/fraidev/go-echo-cache"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/marigold-dev/tzproxy/balancers"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/diode"
@@ -255,7 +256,7 @@ func NewConfig() *Config {
 		store = &memoryStore
 	}
 
-	balancer := NewSameNodeBalancer(targets, retryTarget, configFile.LoadBalancer.TTL, store)
+	balancer := balancers.NewSameNodeBalancer(targets, retryTarget, configFile.LoadBalancer.TTL, store)
 
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,

@@ -1,4 +1,4 @@
-package utils
+package balancers
 
 import (
 	"math/rand"
@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-type sameNodeBalancer struct {
+type ipHashBalancer struct {
 	targets     []*middleware.ProxyTarget
 	retryTarget *middleware.ProxyTarget
 	mutex       sync.Mutex
@@ -19,8 +19,8 @@ type sameNodeBalancer struct {
 	TTL         int
 }
 
-func NewSameNodeBalancer(targets []*middleware.ProxyTarget, retryTarget *middleware.ProxyTarget, ttl int, store echocache.Cache) middleware.ProxyBalancer {
-	b := sameNodeBalancer{}
+func NewIPHashBalancer(targets []*middleware.ProxyTarget, retryTarget *middleware.ProxyTarget, ttl int, store echocache.Cache) middleware.ProxyBalancer {
+	b := ipHashBalancer{}
 	b.targets = targets
 	b.retryTarget = retryTarget
 	b.random = rand.New(rand.NewSource(int64(time.Now().Nanosecond())))
@@ -29,7 +29,7 @@ func NewSameNodeBalancer(targets []*middleware.ProxyTarget, retryTarget *middlew
 	return &b
 }
 
-func (b *sameNodeBalancer) AddTarget(target *middleware.ProxyTarget) bool {
+func (b *ipHashBalancer) AddTarget(target *middleware.ProxyTarget) bool {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 	for _, t := range b.targets {
@@ -41,7 +41,7 @@ func (b *sameNodeBalancer) AddTarget(target *middleware.ProxyTarget) bool {
 	return true
 }
 
-func (b *sameNodeBalancer) RemoveTarget(name string) bool {
+func (b *ipHashBalancer) RemoveTarget(name string) bool {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 	for i, t := range b.targets {
@@ -53,7 +53,7 @@ func (b *sameNodeBalancer) RemoveTarget(name string) bool {
 	return false
 }
 
-func (b *sameNodeBalancer) Next(c echo.Context) *middleware.ProxyTarget {
+func (b *ipHashBalancer) Next(c echo.Context) *middleware.ProxyTarget {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
