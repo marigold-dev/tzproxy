@@ -57,10 +57,6 @@ func (b *ipHashBalancer) Next(c echo.Context) *middleware.ProxyTarget {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 
-	if b.retryTarget != nil && c.Get("retry") != nil && c.Get("retry").(bool) {
-		return b.retryTarget
-	}
-
 	if len(b.targets) == 0 {
 		return nil
 	} else if len(b.targets) == 1 {
