@@ -2,6 +2,7 @@ package utils
 
 import (
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"regexp"
@@ -257,19 +258,30 @@ func NewConfig() *Config {
 
 	balancer := balancers.NewIPHashBalancer(targets, retryTarget, configFile.LoadBalancer.TTL, store)
 
+	bunchWriter := diode.NewWriter(
+		os.Stdout,
+		configFile.Logger.BunchSize,
+		time.Duration(configFile.Logger.PoolIntervalSeconds)*time.Second, func(missed int) {
+			log.Printf("Logger Dropped %d messages", missed)
+		})
+
+	logger := zerolog.New(bunchWriter)
 	proxyConfig := middleware.ProxyConfig{
 		Skipper:    middleware.DefaultSkipper,
 		ContextKey: "target",
 		RetryCount: 0,
 		Balancer:   balancer,
 		RetryFilter: func(c echo.Context, err error) bool {
-			log.Printf("lel \n")
-			log.Printf("RetryFilter: %v", err)
-			c.Logger().Error(err)
+			if httpErr, ok := err.(*echo.HTTPError); ok {
+				if httpErr.Code == http.StatusBadGateway || httpErr.Code == http.StatusNotFound || httpErr.Code == http.StatusGone {
+					return true
+				}
+			}
+
 			return false
 		},
 		ErrorHandler: func(c echo.Context, err error) error {
-			c.Set("retry", true)
+			logger.Error().Err(err).Msg("proxy error")
 			c.Logger().Error(err)
 			return err
 		},
@@ -310,13 +322,7 @@ func NewConfig() *Config {
 		config.CacheDisabledRoutesRegex = append(config.CacheDisabledRoutesRegex, regex)
 	}
 
-	bunchWriter := diode.NewWriter(
-		os.Stdout,
-		config.ConfigFile.Logger.BunchSize,
-		time.Duration(configFile.Logger.PoolIntervalSeconds)*time.Second, func(missed int) {
-			log.Printf("Logger Dropped %d messages", missed)
-		})
-	config.Logger = zerolog.New(bunchWriter)
+	config.Logger = logger
 
 	config.RequestLoggerConfig = &middleware.RequestLoggerConfig{
 		LogLatency:      true,
