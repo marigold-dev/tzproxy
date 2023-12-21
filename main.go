@@ -32,6 +32,7 @@ func main() {
 	e.Use(middlewares.RateLimit(config))
 	e.Use(middlewares.DenyRoutes(config))
 	e.Use(middlewares.Cache(config))
+	e.Use(middlewares.Retry(config))
 	e.Use(middlewares.Gzip(config))
 	e.Use(middleware.ProxyWithConfig(*config.ProxyConfig))
 
