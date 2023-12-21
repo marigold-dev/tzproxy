@@ -6,7 +6,7 @@ RUN go mod download
 COPY . .
 RUN go build -o /tzproxy
 
-FROM debian:12.0-slim
+FROM debian:12.4-slim
 COPY --from=builder /tzproxy ./
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 EXPOSE 8080
