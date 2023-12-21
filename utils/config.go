@@ -2,8 +2,6 @@ package utils
 
 import (
 	"log"
-	"net"
-	"net/http"
 	"net/url"
 	"os"
 	"regexp"
@@ -35,6 +33,7 @@ type Config struct {
 	RequestLoggerConfig      *middleware.RequestLoggerConfig
 	ProxyConfig              *middleware.ProxyConfig
 	Redis                    *redis.Client
+	Logger                   zerolog.Logger
 }
 
 type Logger struct {
@@ -258,25 +257,22 @@ func NewConfig() *Config {
 
 	balancer := balancers.NewIPHashBalancer(targets, retryTarget, configFile.LoadBalancer.TTL, store)
 
-	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   65 * time.Second,
-			KeepAlive: 65 * time.Second,
-		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          300,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
-
 	proxyConfig := middleware.ProxyConfig{
 		Skipper:    middleware.DefaultSkipper,
 		ContextKey: "target",
-		RetryCount: 2,
+		RetryCount: 0,
 		Balancer:   balancer,
-		Transport:  transport,
+		RetryFilter: func(c echo.Context, err error) bool {
+			log.Printf("lel \n")
+			log.Printf("RetryFilter: %v", err)
+			c.Logger().Error(err)
+			return false
+		},
+		ErrorHandler: func(c echo.Context, err error) error {
+			c.Set("retry", true)
+			c.Logger().Error(err)
+			return err
+		},
 	}
 
 	config := &Config{
@@ -320,7 +316,8 @@ func NewConfig() *Config {
 		time.Duration(configFile.Logger.PoolIntervalSeconds)*time.Second, func(missed int) {
 			log.Printf("Logger Dropped %d messages", missed)
 		})
-	zl := zerolog.New(bunchWriter)
+	config.Logger = zerolog.New(bunchWriter)
+
 	config.RequestLoggerConfig = &middleware.RequestLoggerConfig{
 		LogLatency:      true,
 		LogProtocol:     true,
@@ -335,7 +332,7 @@ func NewConfig() *Config {
 		LogReferer:      true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			if v.Error != nil {
-				zl.Error().
+				config.Logger.Error().
 					Err(v.Error).
 					Str("ip", v.RemoteIP).
 					Int("status", v.Status).
@@ -343,19 +340,20 @@ func NewConfig() *Config {
 					Str("uri", v.URI).
 					Str("user_agent", v.UserAgent).
 					Msg("request error")
-			} else {
-				zl.Info().
-					Str("ip", v.RemoteIP).
-					Str("protocol", v.Protocol).
-					Int("status", v.Status).
-					Str("method", v.Method).
-					Str("uri", v.URI).
-					Int64("elapsed", int64(v.Latency)).
-					Str("user_agent", v.UserAgent).
-					Str("referer", v.Referer).
-					Int64("response_size", v.ResponseSize).
-					Msg("request")
+				return v.Error
 			}
+
+			config.Logger.Info().
+				Str("ip", v.RemoteIP).
+				Str("protocol", v.Protocol).
+				Int("status", v.Status).
+				Str("method", v.Method).
+				Str("uri", v.URI).
+				Int64("elapsed", int64(v.Latency)).
+				Str("user_agent", v.UserAgent).
+				Str("referer", v.Referer).
+				Int64("response_size", v.ResponseSize).
+				Msg("request")
 
 			return nil
 		},
