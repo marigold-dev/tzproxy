@@ -63,6 +63,10 @@ func (b *ipHashBalancer) Next(c echo.Context) *middleware.ProxyTarget {
 		return b.targets[0]
 	}
 
+	if c.Get("retry") != nil {
+		return b.retryTarget
+	}
+
 	ctx := c.Request().Context()
 	ip := []byte(c.RealIP())
 	got, err := b.store.Get(ctx, ip)

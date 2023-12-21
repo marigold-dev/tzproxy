@@ -123,7 +123,7 @@ var defaultConfig = &ConfigFile{
 	},
 	Logger: Logger{
 		BunchSize:           1000,
-		PoolIntervalSeconds: 10,
+		PoolIntervalSeconds: 1,
 	},
 	RateLimit: RateLimit{
 		Enabled: false,
