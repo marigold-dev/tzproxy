@@ -56,16 +56,14 @@ func (b *ipHashBalancer) RemoveTarget(name string) bool {
 func (b *ipHashBalancer) Next(c echo.Context) *middleware.ProxyTarget {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
-	c.Logger().Info("retrying")
 
 	if len(b.targets) == 0 {
 		return nil
-	} else if len(b.targets) == 1 {
+	} else if len(b.targets) == 1 && b.retryTarget == nil {
 		return b.targets[0]
 	}
 
 	if c.Get("retry") != nil {
-		c.Logger().Debug("retrying")
 		return b.retryTarget
 	}
 
