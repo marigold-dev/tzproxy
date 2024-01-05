@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -9,10 +10,16 @@ import (
 
 func initViper() *ConfigFile {
 
+
 	// Set the configuration file name and path
 	viper.SetConfigName("tzproxy")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
+
+	// Check if the tzproxy.dev.yaml configuration file exists
+	if _, err := os.Stat("tzproxy.dev.yaml"); err == nil {
+		viper.SetConfigName("tzproxy.dev")
+	}
 
 	// Read the configuration file
 	viper.ReadInConfig()
