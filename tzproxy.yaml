@@ -3,7 +3,7 @@ cache:
         - /monitor/.*
         - /chains/.*/mempool
         - /chains/.*/blocks.*head
-    enabled: true
+    enabled: false
     size_mb: 100
     ttl: 5
 cors:
@@ -27,6 +27,7 @@ deny_routes:
         - /helpers/endorsing_rights
         - /chains/.*/blocks/.*/context/contracts(/?)$
         - /chains/.*/blocks/.*/context/raw/bytes
+dev_mode: true
 gc:
     optimize_memory_store: true
     percent: 100

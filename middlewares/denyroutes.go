@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/marigold-dev/tzproxy/utils"
+	"github.com/marigold-dev/tzproxy/config"
 )
 
-func DenyRoutes(config *utils.Config) echo.MiddlewareFunc {
+func DenyRoutes(config *config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if !config.ConfigFile.DenyRoutes.Enabled {

@@ -13,11 +13,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/marigold-dev/tzproxy/middlewares"
-	"github.com/marigold-dev/tzproxy/utils"
+	"github.com/marigold-dev/tzproxy/config"
+	"github.com/ziflex/lecho/v3"
 )
 
 func main() {
-	config := utils.NewConfig()
+	config := config.NewConfig()
 
 	debug.SetGCPercent(config.ConfigFile.GC.Percent)
 
@@ -26,6 +27,7 @@ func main() {
 	e.HidePort = true
 
 	// Middlewares
+	e.Logger = lecho.From(config.Logger)
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestLoggerWithConfig(*config.RequestLoggerConfig))
 	e.Use(middlewares.CORS(config))

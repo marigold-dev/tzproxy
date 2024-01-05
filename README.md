@@ -71,6 +71,7 @@ deny_routes:
         - /helpers/endorsing_rights
         - /chains/.*/blocks/.*/context/contracts(/?)$
         - /chains/.*/blocks/.*/context/raw/bytes
+dev_mode: false
 gc:
     optimize_memory_store: true
     percent: 100
@@ -101,7 +102,7 @@ tezos_host:
 
 You can also configure or overwrite TzProxy with environment variables, using the same structure:
 
-
+- `TZPROXY_DEV_MODE` is a flag to enable dev features like pretty logger.
 - `TZPROXY_HOST` is the host of the proxy.
 - `TZPROXY_TEZOS_HOST` are the hosts of the tezos nodes.
 - `TZPROXY_TEZOS_HOST_RETRY` is the host used when finding a 404 or 410. It's recommended use full or archive nodes.

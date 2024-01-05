@@ -5,10 +5,10 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/marigold-dev/tzproxy/utils"
+	"github.com/marigold-dev/tzproxy/config"
 )
 
-func Gzip(config *utils.Config) echo.MiddlewareFunc {
+func Gzip(config *config.Config) echo.MiddlewareFunc {
 	return middleware.GzipWithConfig(middleware.GzipConfig{
 		Skipper: func(c echo.Context) bool {
 			if config.ConfigFile.GZIP.Enabled && strings.Contains(c.Request().Header.Get("Accept-Encoding"), "gzip") {

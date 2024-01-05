@@ -6,13 +6,13 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	"github.com/marigold-dev/tzproxy/utils"
+	"github.com/marigold-dev/tzproxy/config"
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
 	"github.com/ulule/limiter/v3/drivers/store/redis"
 )
 
-func RateLimit(config *utils.Config) echo.MiddlewareFunc {
+func RateLimit(config *config.Config) echo.MiddlewareFunc {
 	var store limiter.Store
 	if config.ConfigFile.Redis.Enabled {
 		var err error

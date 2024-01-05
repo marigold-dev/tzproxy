@@ -7,10 +7,10 @@ import (
 
 	echocache "github.com/fraidev/go-echo-cache"
 	"github.com/labstack/echo/v4"
-	"github.com/marigold-dev/tzproxy/utils"
+	"github.com/marigold-dev/tzproxy/config"
 )
 
-func Cache(config *utils.Config) echo.MiddlewareFunc {
+func Cache(config *config.Config) echo.MiddlewareFunc {
 	return echocache.New(&echocache.Config{
 		TTL: config.CacheTTL,
 		Cache: func(r *http.Request) bool {
