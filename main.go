@@ -39,6 +39,13 @@ func main() {
 	e.Use(middleware.ProxyWithConfig(*config.ProxyConfig))
 
 	// Start metrics server
+	startMetricsServer(config)
+
+	// Start proxy
+	startProxyWithGracefulShutdown(e, config)
+}
+
+func startMetricsServer(config *config.Config) {
 	if config.ConfigFile.Metrics.Enabled {
 		go func() {
 			metrics := echo.New()
@@ -61,7 +68,9 @@ func main() {
 		}()
 	}
 
-	// Start proxy
+}
+
+func startProxyWithGracefulShutdown(e *echo.Echo, config *config.Config) {
 	go func() {
 		if err := e.Start(config.ConfigFile.Host); err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal("Shutting down the server")
