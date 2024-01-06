@@ -50,7 +50,7 @@ func NewConfig() *Config {
 	proxyConfig := middleware.ProxyConfig{
 		Skipper:    middleware.DefaultSkipper,
 		ContextKey: "target",
-		RetryCount: 0,
+		RetryCount: len(configFile.TezosHost) + 1,
 		Balancer:   balancer,
 		RetryFilter: func(c echo.Context, err error) bool {
 			if httpErr, ok := err.(*echo.HTTPError); ok {

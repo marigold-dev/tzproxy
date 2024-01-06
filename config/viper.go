@@ -10,7 +10,6 @@ import (
 
 func initViper() *ConfigFile {
 
-
 	// Set the configuration file name and path
 	viper.SetConfigName("tzproxy")
 	viper.SetConfigType("yaml")

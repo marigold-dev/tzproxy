@@ -12,8 +12,8 @@ import (
 	"github.com/fraidev/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/marigold-dev/tzproxy/middlewares"
 	"github.com/marigold-dev/tzproxy/config"
+	"github.com/marigold-dev/tzproxy/middlewares"
 	"github.com/ziflex/lecho/v3"
 )
 

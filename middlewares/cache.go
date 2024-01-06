@@ -14,7 +14,10 @@ func Cache(config *config.Config) echo.MiddlewareFunc {
 	return echocache.New(&echocache.Config{
 		TTL: config.CacheTTL,
 		Cache: func(r *http.Request) bool {
-			if !config.ConfigFile.Cache.Enabled || r.Method != http.MethodGet {
+			if !config.ConfigFile.Cache.Enabled ||
+				r.Method != http.MethodGet ||
+				strings.Contains(r.URL.Path, "mempool") ||
+				strings.Contains(r.URL.Path, "monitor") {
 				return false
 			}
 
