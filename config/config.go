@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
@@ -68,11 +67,16 @@ func NewConfig() *Config {
 		},
 	}
 
+	// Parse routes by http method
+	allowRegexRoutes := parseRegexRoutes(configFile.AllowRoutes.Values)
+	denyRegexRoutes := parseRegexRoutes(configFile.DenyRoutes.Values)
+	cacheDisableRegexRoutes := parseRegexRoutes(configFile.Cache.DisabledRoutes)
+
 	config := &Config{
 		ConfigFile: configFile,
-		DenyListTable: func() map[string]bool {
+		DenyIPsTable: func() map[string]bool {
 			table := make(map[string]bool)
-			for _, ip := range configFile.DenyList.Values {
+			for _, ip := range configFile.DenyIPs.Values {
 				table[ip] = true
 			}
 			return table
@@ -81,28 +85,14 @@ func NewConfig() *Config {
 			Period: time.Duration(configFile.RateLimit.Minutes) * time.Minute,
 			Limit:  int64(configFile.RateLimit.Max),
 		},
-		Store:       store,
-		CacheTTL:    time.Duration(configFile.Cache.TTL) * (time.Second),
-		ProxyConfig: &proxyConfig,
-		Redis:       redisClient,
+		Store:                    store,
+		CacheTTL:                 time.Duration(configFile.Cache.TTL) * (time.Second),
+		ProxyConfig:              &proxyConfig,
+		Redis:                    redisClient,
+		AllowRoutesRegex:         allowRegexRoutes,
+		DenyRoutesRegex:          denyRegexRoutes,
+		CacheDisabledRoutesRegex: cacheDisableRegexRoutes,
 	}
-
-	for _, route := range config.ConfigFile.DenyRoutes.Values {
-		regex, err := regexp.Compile(route)
-		if err != nil {
-			log.Fatal().Err(err).Msg("unable to compile regex")
-		}
-		config.BlockRoutesRegex = append(config.BlockRoutesRegex, regex)
-	}
-
-	for _, route := range config.ConfigFile.Cache.DisabledRoutes {
-		regex, err := regexp.Compile(route)
-		if err != nil {
-			log.Fatal().Err(err).Msg("unable to compile regex")
-		}
-		config.CacheDisabledRoutesRegex = append(config.CacheDisabledRoutesRegex, regex)
-	}
-
 	config.Logger = logger
 
 	config.RequestLoggerConfig = &middleware.RequestLoggerConfig{

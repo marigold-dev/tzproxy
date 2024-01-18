@@ -21,7 +21,12 @@ func Cache(config *config.Config) echo.MiddlewareFunc {
 				return false
 			}
 
-			for _, regex := range config.CacheDisabledRoutesRegex {
+			regexRoutesByMethod, has := config.CacheDisabledRoutesRegex[r.Method]
+			if !has {
+				return true
+			}
+
+			for _, regex := range regexRoutesByMethod {
 				if regex.MatchString(r.URL.Path) {
 					return false
 				}

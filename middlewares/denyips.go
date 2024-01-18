@@ -7,14 +7,14 @@ import (
 	"github.com/marigold-dev/tzproxy/config"
 )
 
-func Denylist(config *config.Config) echo.MiddlewareFunc {
+func DenyIPs(config *config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			if !config.ConfigFile.DenyList.Enabled {
+			if !config.ConfigFile.DenyIPs.Enabled {
 				return next(c)
 			}
 
-			value, has := config.DenyListTable[c.RealIP()]
+			value, has := config.DenyIPsTable[c.RealIP()]
 			if value && has {
 				return c.JSON(http.StatusForbidden, echo.Map{
 					"success": false,

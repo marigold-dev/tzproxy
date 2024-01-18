@@ -42,35 +42,65 @@ curl http://localhost:8080/chains/main/blocks/head/header
 Here a default `tzproxy.yaml` file:
 
 ```yaml
+allow_routes:
+    enabled: true
+    values:
+        - GET/chains/.*/blocks
+        - GET/chains/.*/chain_id
+        - GET/chains.*/checkpoint
+        - GET/chains/.*/invalid_blocks
+        - GET/chains.*/invalid_blocks.*
+        - GET/chains/.*/is_bootstrapped
+        - GET/chains.*/mempool/filter
+        - GET/chains/.*/mempool/monitor_operations
+        - GET/chains/.*/mempool/pending_operations
+        - GET/config/network/user_activated_protocol_overrides
+        - GET/config/network/user_activated_upgrades
+        - GET/config/network/dal
+        - GET/describe.*
+        - GET/errors
+        - GET/monitor.*
+        - GET/network/greylist/ips
+        - GET/network/greylist/peers
+        - GET/network/self
+        - GET/network/stat
+        - GET/network/version
+        - GET/network/versions
+        - GET/protocols
+        - GET/protocols.*
+        - GET/protocols.*/environment
+        - GET/version
+        - POST/chains/.*/blocks/.*/helpers
+        - POST/chains/.*/blocks/.*/script
+        - POST/chains/.*/blocks/.*/context/contracts.*/big_map_get
+        - POST/injection/operation
 cache:
     disabled_routes:
-        - /monitor/.*
-        - /chains/.*/mempool
-        - /chains/.*/blocks.*head
+        - GET/monitor/.*
+        - GET/chains/.*/mempool
+        - GET/chains/.*/blocks.*head
     enabled: true
     size_mb: 100
     ttl: 5
 cors:
     enabled: true
-deny_list:
+deny_ips:
     enabled: false
     values: []
 deny_routes:
     enabled: true
     values:
-        - /injection/block
-        - /injection/protocol
-        - /network.*
-        - /workers.*
-        - /worker.*
-        - /stats.*
-        - /config
-        - /chains/.*/blocks/.*/helpers/baking_rights
-        - /chains/.*/blocks/.*/helpers/endorsing_rights
-        - /helpers/baking_rights
-        - /helpers/endorsing_rights
-        - /chains/.*/blocks/.*/context/contracts(/?)$
-        - /chains/.*/blocks/.*/context/raw/bytes
+        - GET/workers.*
+        - GET/worker.*
+        - GET/stats.*
+        - GET/chains/.*/blocks/.*/helpers/baking_rights
+        - GET/chains/.*/blocks/.*/helpers/endorsing_rights
+        - GET/helpers/baking_rights
+        - GET/helpers/endorsing_rights
+        - GET/chains/.*/blocks/.*/context/contracts(/?)$
+        - GET/chains/.*/blocks/.*/context/raw/bytes
+        - POST/injection/block
+        - POST/injection/protocol
 dev_mode: false
 gc:
     optimize_memory_store: true
@@ -96,6 +126,7 @@ redis:
     host: ""
 tezos_host:
     - 127.0.0.1:8732
+tezos_host_retry: ""
 ```
 
 ### Environment Variables
@@ -118,10 +149,12 @@ You can also configure or overwrite TzProxy with environment variables, using th
 - `TZPROXY_RATE_LIMIT_ENABLED` is a flag to enable rate limiting.
 - `TZPROXY_RATE_LIMIT_MINUTES` is the minutes of the period of rate limiting. 
 - `TZPROXY_RATE_LIMIT_MAX` is the max of requests permitted in a period.
-- `TZPROXY_DENY_LIST_ENABLED` is a flag to block IP addresses.
-- `TZPROXY_DENY_LIST_VALUES` is the IP Address that will be blocked on the proxy.
+- `TZPROXY_DENY_IPS_ENABLED` is a flag to block IP addresses.
+- `TZPROXY_DENY_IPS_VALUES` is the IP Address that will be blocked on the proxy.
 - `TZPROXY_DENY_ROUTES_ENABLED` is a flag to block the Tezos node's routes. 
 - `TZPROXY_DENY_ROUTES_VALUES` is the Tezos nodes routes that will be blocked on the proxy.conf.
+- `TZPROXY_ALLOW_ROUTES_ENABLED` is a flag to allow the Tezos node's routes. 
+- `TZPROXY_ALLOW_ROUTES_VALUES` is the Tezos nodes routes that will be allowed on the proxy.conf.
 - `TZPROXY_METRICS_ENABLED` is the flag to enable metrics.
 - `TZPROXY_METRICS_PPROF` is the flag to enable pprof.
 - `TZPROXY_METRICS_HOST` is the host of the prometheus metrics and pprof (if enabled).

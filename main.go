@@ -32,6 +32,8 @@ func main() {
 	e.Use(middleware.RequestLoggerWithConfig(*config.RequestLoggerConfig))
 	e.Use(middlewares.CORS(config))
 	e.Use(middlewares.RateLimit(config))
+	e.Use(middlewares.DenyIPs(config))
+	e.Use(middlewares.AllowRoutes(config))
 	e.Use(middlewares.DenyRoutes(config))
 	e.Use(middlewares.Cache(config))
 	e.Use(middlewares.Gzip(config))

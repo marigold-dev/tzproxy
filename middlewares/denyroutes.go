@@ -15,9 +15,16 @@ func DenyRoutes(config *config.Config) echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			path := c.Request().URL.Path
+			r := c.Request()
 
-			for _, regex := range config.BlockRoutesRegex {
+			path := r.URL.Path
+
+			regexRoutesByMethod, has := config.DenyRoutesRegex[r.Method]
+			if !has {
+				return next(c)
+			}
+
+			for _, regex := range regexRoutesByMethod {
 				if regex.MatchString(path) {
 					msg := fmt.Sprintf("You don't have access %s route", path)
 					return c.JSON(http.StatusForbidden, echo.Map{

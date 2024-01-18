@@ -15,10 +15,11 @@ type Config struct {
 	Level                    uint
 	HashBlock                string
 	ConfigFile               *ConfigFile
-	DenyListTable            map[string]bool
 	Rate                     *limiter.Rate
-	CacheDisabledRoutesRegex []*regexp.Regexp
-	BlockRoutesRegex         []*regexp.Regexp
+	DenyIPsTable             map[string]bool
+	CacheDisabledRoutesRegex map[string][]*regexp.Regexp
+	DenyRoutesRegex          map[string][]*regexp.Regexp
+	AllowRoutesRegex         map[string][]*regexp.Regexp
 	Store                    echocache.Cache
 	CacheTTL                 time.Duration
 	RequestLoggerConfig      *middleware.RequestLoggerConfig
@@ -45,7 +46,12 @@ type Cache struct {
 	SizeMB         int      `mapstructure:"size_mb"`
 }
 
-type DenyList struct {
+type DenyIPs struct {
+	Enabled bool     `mapstructure:"enabled"`
+	Values  []string `mapstructure:"values"`
+}
+
+type AllowRoutes struct {
 	Enabled bool     `mapstructure:"enabled"`
 	Values  []string `mapstructure:"values"`
 }
@@ -90,8 +96,9 @@ type ConfigFile struct {
 	Logger         Logger       `mapstructure:"logger"`
 	RateLimit      RateLimit    `mapstructure:"rate_limit"`
 	Cache          Cache        `mapstructure:"cache"`
-	DenyList       DenyList     `mapstructure:"deny_list"`
+	DenyIPs        DenyIPs      `mapstructure:"deny_ips"`
 	DenyRoutes     DenyRoutes   `mapstructure:"deny_routes"`
+	AllowRoutes    AllowRoutes  `mapstructure:"allow_routes"`
 	Metrics        Metrics      `mapstructure:"metrics"`
 	GC             GC           `mapstructure:"gc"`
 	CORS           CORS         `mapstructure:"cors"`
