@@ -54,6 +54,7 @@ var defaultConfig = &ConfigFile{
 			"POST/chains/.*/blocks/.*/helpers",
 			"POST/chains/.*/blocks/.*/script",
 			"POST/chains/.*/blocks/.*/context/contracts.*/big_map_get",
+			"POST/chains/.*/blocks/.*/context/contracts.*/ticket_balance",
 			"POST/injection/operation",
 		},
 	},
