@@ -61,8 +61,14 @@ func NewConfig() *Config {
 			return false
 		},
 		ErrorHandler: func(c echo.Context, err error) error {
-			logger.Error().Err(err).Str("method", c.Request().Method).Str("uri", c.Request().URL.Path).Msg("proxy error")
-			c.Logger().Error(err)
+        	// Log the error with additional context
+			logger.Error().
+				Err(err).
+				Str("method", c.Request().Method).
+				Str("uri", c.Request().URL.Path).
+				Str("ip", c.RealIP()).
+				Str("user_agent", c.Request().UserAgent()).
+				Msg("proxy error - detailed log")
 			return err
 		},
 	}
