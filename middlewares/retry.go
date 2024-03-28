@@ -33,7 +33,7 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 			// Replace the request body with a buffer
 			c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	
-			var statusFromMsg int
+			statusFromMsg := 0
 			err = next(c)
 
 			status := c.Response().Status
@@ -73,7 +73,21 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 
 				err = next(c)
 				// Log the status after the retry attempt
-				c.Logger().Infof("Retry attempt status: %d", c.Response().Status)				
+				c.Logger().Infof("Retry attempt http status: %d", c.Response().Status)
+				// Extract the status code from the response body for the retry attempt
+				statusFromMsgRetry := 0
+				if err != nil {
+					match := statusCodeRegex.FindStringSubmatch(err.Error())
+					if len(match) > 1 {
+						statusFromMsgRetry, _ = strconv.Atoi(match[1])
+					}
+				}
+				retryFailed := statusFromMsgRetry == 502 || c.Response().Status == http.StatusNotFound || c.Response().Status == http.StatusForbidden
+				if retryFailed {
+					c.Logger().Infof("Retry attempt http status: %d, code found in body: %d", c.Response().Status, statusFromMsgRetry)
+				} else {
+					c.Logger().Infof("Retry attempt succeeded with http status: %d, code found in body: %d", c.Response().Status, statusFromMsgRetry)
+				}
 			}
 
 			c.Set("retry", nil)
