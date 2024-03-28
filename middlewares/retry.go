@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"net/http"
 	"strings"
+	"regexp"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/marigold-dev/tzproxy/config"
@@ -22,11 +24,33 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 			delayedResponse := echo.NewResponse(&writer, c.Echo())
 			c.SetResponse(delayedResponse)
 
+			var statusFromMsg int
 			err = next(c)
 
 			status := c.Response().Status
-			if (c.Request().Method == http.MethodGet && (status == http.StatusNotFound || status == http.StatusForbidden)) ||
-				(c.Request().Method == http.MethodPost && status == http.StatusBadGateway) {
+			// Extract the status code from the error message
+			if err != nil {
+				re := regexp.MustCompile(`code=(\d+)`)
+				match := re.FindStringSubmatch(err.Error())
+				if len(match) > 1 {
+					statusFromMsg, _ = strconv.Atoi(match[1])
+				}
+			}
+			// Check the request method and path
+			method := c.Request().Method
+			path := c.Request().URL.Path
+			shouldRetry := (method == http.MethodGet && (status == http.StatusNotFound || status == http.StatusForbidden)) ||
+				(method == http.MethodPost && status == http.StatusOK && statusFromMsg == http.StatusBadGateway &&
+				(path == "/chains/main/blocks/head/helpers/scripts/run_script_view" ||
+				path == "/chains/main/blocks/head/helpers/scripts/run_view" ||
+				path == "/chains/main/blocks/head/helpers/scripts/pack_data"))
+
+			if err != nil && statusFromMsg == http.StatusBadGateway {
+				c.Logger().Infof("Error occurred with status 502. Request method: %s, path: %s, response status: %d", method, path, status)
+				c.Logger().Infof("Should retry: %v", shouldRetry)
+			}
+
+			if shouldRetry {
 				c.Logger().Infof("Triggering retry for status %d", status)
 				writer.Reset()
 				delayedResponse.Committed = false
