@@ -49,6 +49,7 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 				(method == http.MethodPost && statusFromMsg == 502 &&
 				(path == "/chains/main/blocks/head/helpers/scripts/run_script_view" ||
 				path == "/chains/main/blocks/head/helpers/scripts/run_view" ||
+				path == "/chains/main/blocks/head/helpers/scripts/simulate_operation" ||
 				path == "/chains/main/blocks/head/helpers/scripts/pack_data"))
 
 			if err != nil && statusFromMsg == 502 {
