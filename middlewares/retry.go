@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"bytes"
+	"io"
 	"net/http"
 	"strings"
 	"regexp"
@@ -24,6 +25,11 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 			delayedResponse := echo.NewResponse(&writer, c.Echo())
 			c.SetResponse(delayedResponse)
 
+			// Read the request body
+			bodyBytes, _ := io.ReadAll(c.Request().Body)
+			// Replace the request body with a buffer
+			c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	
 			var statusFromMsg int
 			err = next(c)
 
@@ -40,18 +46,18 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 			method := c.Request().Method
 			path := c.Request().URL.Path
 			shouldRetry := (method == http.MethodGet && (status == http.StatusNotFound || status == http.StatusForbidden)) ||
-				(method == http.MethodPost && status == http.StatusOK && statusFromMsg == http.StatusBadGateway &&
+				(method == http.MethodPost && statusFromMsg == 502 &&
 				(path == "/chains/main/blocks/head/helpers/scripts/run_script_view" ||
 				path == "/chains/main/blocks/head/helpers/scripts/run_view" ||
 				path == "/chains/main/blocks/head/helpers/scripts/pack_data"))
 
-			if err != nil && statusFromMsg == http.StatusBadGateway {
-				c.Logger().Infof("Error occurred with status 502. Request method: %s, path: %s, response status: %d", method, path, status)
+			if err != nil && statusFromMsg == 502 {
+				c.Logger().Infof("Error occurred with status 502. Request method: %s, path: %s, response status: %d", method, path, statusFromMsg)
 				c.Logger().Infof("Should retry: %v", shouldRetry)
 			}
 
 			if shouldRetry {
-				c.Logger().Infof("Triggering retry for status %d", status)
+				c.Logger().Infof("Triggering retry for http status %d", status)
 				writer.Reset()
 				delayedResponse.Committed = false
 				delayedResponse.Size = 0
@@ -61,6 +67,9 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 				// This _error key comes from Echo (referenced in ProxyWithConfig middleware)
 				// so we need to reset this as well.
 				c.Set("_error", nil)
+
+				// Reset the request body
+				c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 				err = next(c)
 			}

@@ -68,7 +68,7 @@ func NewConfig() *Config {
 				Str("uri", c.Request().URL.Path).
 				Str("ip", c.RealIP()).
 				Str("user_agent", c.Request().UserAgent()).
-				Msg("proxy error - detailed log")
+				Msg("proxy error")
 			return err
 		},
 	}
