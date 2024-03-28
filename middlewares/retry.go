@@ -13,7 +13,6 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if config.ConfigFile.TezosHostRetry == "" ||
-				c.Request().Method != http.MethodGet ||
 				strings.Contains(c.Request().URL.Path, "mempool") ||
 				strings.Contains(c.Request().URL.Path, "monitor") {
 				return next(c)
@@ -26,7 +25,8 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 			err = next(c)
 
 			status := c.Response().Status
-			if status == http.StatusNotFound || status == http.StatusForbidden {
+			if (c.Request().Method == http.MethodGet && (status == http.StatusNotFound || status == http.StatusForbidden)) ||
+				(c.Request().Method == http.MethodPost && status == http.StatusBadGateway) {
 				writer.Reset()
 				delayedResponse.Committed = false
 				delayedResponse.Size = 0
