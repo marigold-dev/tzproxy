@@ -27,6 +27,7 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 			status := c.Response().Status
 			if (c.Request().Method == http.MethodGet && (status == http.StatusNotFound || status == http.StatusForbidden)) ||
 				(c.Request().Method == http.MethodPost && status == http.StatusBadGateway) {
+				c.Logger().Infof("Triggering retry for status %d", status)
 				writer.Reset()
 				delayedResponse.Committed = false
 				delayedResponse.Size = 0
