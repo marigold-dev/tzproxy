@@ -12,6 +12,9 @@ import (
 	"github.com/marigold-dev/tzproxy/config"
 )
 
+// Compile the regular expression once and store it in a global variable
+var statusCodeRegex = regexp.MustCompile(`code=(\d+)`)
+
 func Retry(config *config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
@@ -36,8 +39,7 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 			status := c.Response().Status
 			// Extract the status code from the error message
 			if err != nil {
-				re := regexp.MustCompile(`code=(\d+)`)
-				match := re.FindStringSubmatch(err.Error())
+				match := statusCodeRegex.FindStringSubmatch(err.Error())
 				if len(match) > 1 {
 					statusFromMsg, _ = strconv.Atoi(match[1])
 				}
@@ -47,10 +49,7 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 			path := c.Request().URL.Path
 			shouldRetry := (method == http.MethodGet && (status == http.StatusNotFound || status == http.StatusForbidden)) ||
 				(method == http.MethodPost && statusFromMsg == 502 &&
-				(path == "/chains/main/blocks/head/helpers/scripts/run_script_view" ||
-				path == "/chains/main/blocks/head/helpers/scripts/run_view" ||
-				path == "/chains/main/blocks/head/helpers/scripts/simulate_operation" ||
-				path == "/chains/main/blocks/head/helpers/scripts/pack_data"))
+				strings.Contains(path, "/chains/main/blocks/head/helpers/scripts/"))
 
 			if err != nil && statusFromMsg == 502 {
 				c.Logger().Infof("Error occurred with status 502. Request method: %s, path: %s, response status: %d", method, path, statusFromMsg)
@@ -73,6 +72,8 @@ func Retry(config *config.Config) echo.MiddlewareFunc {
 				c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 				err = next(c)
+				// Log the status after the retry attempt
+				c.Logger().Infof("Retry attempt status: %d", c.Response().Status)				
 			}
 
 			c.Set("retry", nil)
